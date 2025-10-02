@@ -1,0 +1,51 @@
+# Node modules
+node_modules/
+**/node_modules/
+
+# Build outputs
+dist/
+build/
+**/dist/
+**/build/
+
+# TypeScript cache
+*.tsbuildinfo
+**/*.tsbuildinfo
+
+# Logs
+npm-debug.log*
+yarn-debug.log*
+yarn-error.log*
+pnpm-debug.log*
+
+# Environment variables
+.env
+.env.*
+
+# OS generated files
+.DS_Store
+Thumbs.db
+
+# IDEs
+.vscode/
+.idea/
+*.swp
+
+# Output from Drizzle ORM
+drizzle/
+**/drizzle/
+
+# Replit
+.replit
+*.replit
+
+# Misc
+*.log
+*.tgz
+
+# Debug
+.vscode/*
+
+# Package-Lock.json
+.package-lock.json
+**/package-lock.json
