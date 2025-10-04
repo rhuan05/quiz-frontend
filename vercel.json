@@ -4,6 +4,6 @@
   ],
   "outputDirectory": "dist/public",
   "rewrites": [
-    { "source": "/(.*)", "destination": "/" }
+    { "source": "/(.*)", "destination": "/index.html" }
   ]
 }
