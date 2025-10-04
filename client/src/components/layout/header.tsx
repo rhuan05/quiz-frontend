@@ -1,6 +1,6 @@
 import { Button } from "../../components/ui/button";
 import { useLocation } from "wouter";
-import { Code, Home, BarChart3, LogIn, LogOut, User } from "lucide-react";
+import { Code, Home, BarChart3, LogIn, LogOut, User, Menu, X } from "lucide-react";
 import { useQuiz } from "../../hooks/use-quiz";
 import { useAuth } from "../../contexts/auth-context";
 import { useState } from 'react';
@@ -10,22 +10,19 @@ export default function Header() {
   const [location, setLocation] = useLocation();
   const [authError, setAuthError] = useState<string>('');
   const [showAuthModal, setShowAuthModal] = useState(false);
-  
+  const [isMenuOpen, setIsMenuOpen] = useState(false); // Controle do menu hamburguer
+
   const { startQuiz, resetQuiz, isLoading } = useQuiz();
   const { isAuthenticated, user, logout } = useAuth();
   const [, setIsLoading] = useState(false);
 
   const handleStartQuiz = async () => {
     setAuthError('');
-
     const token = localStorage.getItem("authToken");
-
     if (token) {
       setIsLoading(true);
-        await startQuiz();
-        setTimeout(() => {
-          setLocation('/quiz');
-        }, 10)
+      await startQuiz();
+      setTimeout(() => setLocation('/quiz'), 10);
     } else {
       setShowAuthModal(true);
     }
@@ -34,22 +31,68 @@ export default function Header() {
   const handleAuth = async (email: string, password: string) => {
     try {      
       setAuthError('');
-      
       const sessionToken = await startQuiz(email, password, 'javascript', 'easy');
-      
-      if (!sessionToken) {
-        throw new Error("Sessão não foi criada corretamente");
-      }
-      
+      if (!sessionToken) throw new Error("Sessão não foi criada corretamente");
       await new Promise(resolve => setTimeout(resolve, 50));
-
       setShowAuthModal(false);
       setLocation('/quiz');
-      
     } catch (error: any) {
       setAuthError(error.message || 'Erro ao iniciar quiz');
     }
   };
+
+  // Menu de botões de autenticação (desktop e mobile)
+  const AuthButtons = ({ isMobile = false }: { isMobile?: boolean }) => (
+    isAuthenticated ? (
+      <>
+        {user?.role === "admin" && (
+          <Button
+            onClick={() => {
+              setLocation("/admin");
+              if (isMobile) setIsMenuOpen(false);
+            }}
+            className="bg-primary text-white hover:bg-blue-600 w-full"
+          >
+            Admin
+          </Button>
+        )}
+        <Button
+          variant="ghost"
+          onClick={() => {
+            logout();
+            if (isMobile) setIsMenuOpen(false);
+          }}
+          className={`text-gray-600 w-full hover:text-red-600 ${isMobile ? 'mt-2' : ''}`}
+        >
+          <LogOut className="mr-2 h-4 w-4" />
+          Sair
+        </Button>
+      </>
+    ) : (
+      <>
+        <Button
+          variant="ghost"
+          onClick={() => {
+            setLocation("/login");
+            if (isMobile) setIsMenuOpen(false);
+          }}
+          className={`text-gray-600 w-full hover:text-primary ${isMobile ? 'mt-2' : ''}`}
+        >
+          <LogIn className="mr-2 h-4 w-4" />
+          Entrar
+        </Button>
+        <Button
+          onClick={() => {
+            setLocation("/register");
+            if (isMobile) setIsMenuOpen(false);
+          }}
+          className={`bg-primary text-white w-full hover:bg-blue-600 ${isMobile ? 'mt-2' : ''}`}
+        >
+          Cadastrar
+        </Button>
+      </>
+    )
+  );
 
   return (
     <>
@@ -59,10 +102,9 @@ export default function Header() {
             <div 
               className="flex items-center space-x-3 cursor-pointer"
               onClick={() => {
-                  resetQuiz();
-                  setLocation("/");
-                }
-              }
+                resetQuiz();
+                setLocation("/");
+              }}
             >
               <div className="w-10 h-10 bg-gradient-to-br from-primary to-blue-600 rounded-lg flex items-center justify-center">
                 <Code className="text-white text-lg" />
@@ -72,21 +114,8 @@ export default function Header() {
                 <p className="text-sm text-gray-500">Tecnologia</p>
               </div>
             </div>
-            
+
             <nav className="hidden md:flex items-center space-x-6">
-              <Button 
-                variant="ghost" 
-                onClick={() => {
-                  resetQuiz();
-                  setLocation("/");
-                }
-              }
-                className={location === "/" ? "text-primary" : "text-gray-600"}
-              >
-                <Home className="mr-2 h-4 w-4" />
-                Início
-              </Button>
-              
               {location !== "/quiz" && !location.includes("results") && (
                 <Button
                   onClick={handleStartQuiz}
@@ -97,61 +126,52 @@ export default function Header() {
                 </Button>
               )}
 
-              {/* Auth buttons */}
               <div className="flex items-center space-x-4 ml-6 border-l border-gray-200 pl-6">
-                {isAuthenticated ? (
-                  <div className="flex items-center space-x-3">
-                    <div className="flex items-center space-x-2">
-                      <User className="h-4 w-4 text-gray-500" />
-                      <span className="text-sm text-gray-700">{user?.username}</span>
-                    </div>
-                    <Button 
-                      variant="ghost" 
-                      size="sm"
-                      onClick={logout}
-                      className="text-gray-600 hover:text-red-600"
-                    >
-                      <LogOut className="mr-2 h-4 w-4" />
-                      Sair
-                    </Button>
-                  </div>
-                ) : (
-                  <div className="flex items-center space-x-2">
-                    <Button 
-                      variant="ghost" 
-                      size="sm"
-                      onClick={() => setLocation("/login")}
-                      className="text-gray-600 hover:text-primary"
-                    >
-                      <LogIn className="mr-2 h-4 w-4" />
-                      Entrar
-                    </Button>
-                    <Button 
-                      size="sm"
-                      onClick={() => setLocation("/register")}
-                      className="bg-primary text-white hover:bg-blue-600"
-                    >
-                      Cadastrar
-                    </Button>
-                  </div>
-                )}
+                <AuthButtons />
               </div>
             </nav>
+
+            <div className="md:hidden flex items-center">
+              <button
+                onClick={() => setIsMenuOpen(!isMenuOpen)}
+                className="text-gray-600 hover:text-primary focus:outline-none"
+              >
+                {isMenuOpen ? <X className="w-6 h-6" /> : <Menu className="w-6 h-6" />}
+              </button>
+
+              {isMenuOpen && (
+                <div className="absolute top-16 right-4 bg-white shadow-lg rounded-md p-4 w-60 space-y-2 z-50">
+                  {location !== "/quiz" && !location.includes("results") && (
+                    <Button
+                      onClick={() => {
+                        handleStartQuiz();
+                        setIsMenuOpen(false);
+                      }}
+                      className="bg-primary text-white w-full"
+                    >
+                      <Code className="mr-2 h-4 w-4" />
+                      Começar Quiz
+                    </Button>
+                  )}
+                  <AuthButtons isMobile />
+                </div>
+              )}
+            </div>
           </div>
         </div>
       </header>
 
       {/* Authentication Modal */}
-            <AuthModal
-              isOpen={showAuthModal}
-              onClose={() => {
-                setShowAuthModal(false);
-                setAuthError('');
-              }}
-              onAuth={handleAuth}
-              loading={isLoading}
-              error={authError}
-            />
+      <AuthModal
+        isOpen={showAuthModal}
+        onClose={() => {
+          setShowAuthModal(false);
+          setAuthError('');
+        }}
+        onAuth={handleAuth}
+        loading={isLoading}
+        error={authError}
+      />
     </>
   );
 }
