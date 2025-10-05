@@ -113,7 +113,7 @@ export default function AdminPage() {
         fetch(`${API_BASE_URL}/api/admin/questions`, {
           headers: { Authorization: `Bearer ${token}` }
         }),
-        fetch(`${API_BASE_URL}/api/admin/categories`, {
+        fetch(`${API_BASE_URL}/api/categories`, {
           headers: { Authorization: `Bearer ${token}` }
         }),
         fetch(`${API_BASE_URL}/api/difficulties`, {
@@ -200,7 +200,7 @@ export default function AdminPage() {
         availableFrom: categoryFormData.availableFrom ? categoryFormData.availableFrom : null
       };
 
-      const response = await fetch(`${API_BASE_URL}/api/admin/categories/${categoryId}`, {
+      const response = await fetch(`${API_BASE_URL}/api/categories/${categoryId}`, {
         method: 'PUT',
         headers: {
           'Content-Type': 'application/json',
