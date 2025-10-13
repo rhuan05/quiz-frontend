@@ -1,6 +1,6 @@
 import { Button } from "../../components/ui/button";
 import { useLocation } from "wouter";
-import { Code, Home, BarChart3, LogIn, LogOut, User, Menu, X } from "lucide-react";
+import { Code, LogIn, LogOut, Menu, X, Trophy } from "lucide-react";
 import { useQuiz } from "../../hooks/use-quiz";
 import { useAuth } from "../../contexts/auth-context";
 import { useState } from 'react';
@@ -31,7 +31,7 @@ export default function Header() {
   const handleAuth = async (email: string, password: string) => {
     try {      
       setAuthError('');
-      const sessionToken = await startQuiz(email, password, 'javascript', 'easy');
+      const sessionToken = await startQuiz();
       if (!sessionToken) throw new Error("Sessão não foi criada corretamente");
       await new Promise(resolve => setTimeout(resolve, 50));
       setShowAuthModal(false);
@@ -116,6 +116,15 @@ export default function Header() {
             </div>
 
             <nav className="hidden md:flex items-center space-x-6">
+              <Button
+                variant="ghost"
+                onClick={() => setLocation("/ranking")}
+                className="text-gray-600 hover:text-primary"
+              >
+                <Trophy className="mr-2 h-4 w-4" />
+                Ranking
+              </Button>
+
               {location !== "/quiz" && !location.includes("results") && (
                 <Button
                   onClick={handleStartQuiz}
@@ -141,6 +150,18 @@ export default function Header() {
 
               {isMenuOpen && (
                 <div className="absolute top-16 right-4 bg-white shadow-lg rounded-md p-4 w-60 space-y-2 z-50">
+                  <Button
+                    variant="ghost"
+                    onClick={() => {
+                      setLocation("/ranking");
+                      setIsMenuOpen(false);
+                    }}
+                    className="text-gray-600 hover:text-primary w-full"
+                  >
+                    <Trophy className="mr-2 h-4 w-4" />
+                    Ranking
+                  </Button>
+
                   {location !== "/quiz" && !location.includes("results") && (
                     <Button
                       onClick={() => {
