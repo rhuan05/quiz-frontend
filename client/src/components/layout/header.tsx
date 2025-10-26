@@ -1,6 +1,6 @@
 import { Button } from "../../components/ui/button";
 import { useLocation } from "wouter";
-import { Code, LogIn, LogOut, Menu, X, Trophy } from "lucide-react";
+import { Code, LogIn, LogOut, Menu, X, Trophy, Crown, CreditCard } from "lucide-react";
 import { useQuiz } from "../../hooks/use-quiz";
 import { useAuth } from "../../contexts/auth-context";
 import { useState } from 'react';
@@ -13,7 +13,7 @@ export default function Header() {
   const [isMenuOpen, setIsMenuOpen] = useState(false); // Controle do menu hamburguer
 
   const { startQuiz, resetQuiz, isLoading } = useQuiz();
-  const { isAuthenticated, user, logout } = useAuth();
+  const { isAuthenticated, user, logout, isPremium } = useAuth();
   const [, setIsLoading] = useState(false);
 
   const handleStartQuiz = async () => {
@@ -125,6 +125,24 @@ export default function Header() {
                 Ranking
               </Button>
 
+              <Button
+                variant="ghost"
+                onClick={() => setLocation("/pricing")}
+                className={`text-gray-600 hover:text-primary ${isPremium ? 'text-yellow-600' : ''}`}
+              >
+                {isPremium ? (
+                  <>
+                    <Crown className="mr-2 h-4 w-4" />
+                    Premium
+                  </>
+                ) : (
+                  <>
+                    <CreditCard className="mr-2 h-4 w-4" />
+                    Planos
+                  </>
+                )}
+              </Button>
+
               {location !== "/quiz" && !location.includes("results") && (
                 <Button
                   onClick={handleStartQuiz}
@@ -160,6 +178,27 @@ export default function Header() {
                   >
                     <Trophy className="mr-2 h-4 w-4" />
                     Ranking
+                  </Button>
+
+                  <Button
+                    variant="ghost"
+                    onClick={() => {
+                      setLocation("/pricing");
+                      setIsMenuOpen(false);
+                    }}
+                    className={`text-gray-600 hover:text-primary w-full ${isPremium ? 'text-yellow-600' : ''}`}
+                  >
+                    {isPremium ? (
+                      <>
+                        <Crown className="mr-2 h-4 w-4" />
+                        Premium
+                      </>
+                    ) : (
+                      <>
+                        <CreditCard className="mr-2 h-4 w-4" />
+                        Planos
+                      </>
+                    )}
                   </Button>
 
                   {location !== "/quiz" && !location.includes("results") && (

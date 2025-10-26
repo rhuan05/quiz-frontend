@@ -7,6 +7,7 @@ interface User {
   email: string;
   username: string;
   role: 'admin' | 'user';
+  isPremium: boolean;
 }
 
 interface AuthContextType {
@@ -17,6 +18,8 @@ interface AuthContextType {
   isLoading: boolean;
   isAuthenticated: boolean;
   isAdmin: boolean;
+  isPremium: boolean;
+  refreshUser: () => Promise<void>;
 }
 
 const AuthContext = createContext<AuthContextType | undefined>(undefined);
@@ -29,6 +32,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
 
   const isAuthenticated = !!token && !!user;
   const isAdmin = user?.role === 'admin';
+  const isPremium = user?.isPremium || false;
 
   // Simple JWT decode function (for demo purposes)
   const decodeToken = (token: string) => {
@@ -51,7 +55,8 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
           id: decoded.id,
           email: decoded.email, // Backend uses username field for email
           username: decoded.username,
-          role: decoded.role || 'user'
+          role: decoded.role || 'user',
+          isPremium: decoded.isPremium || false
         });
       } else {
         // Token expired, remove it
@@ -89,7 +94,8 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
           id: decoded.id,
           email: decoded.email, // Backend uses email field for email
           username: decoded.username,
-          role: decoded.role || 'user'
+          role: decoded.role || 'user',
+          isPremium: decoded.isPremium || false
         });
       }
     } catch (error) {
@@ -107,6 +113,25 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     setLocation('/')
   };
 
+  const refreshUser = async () => {
+    if (!token) return;
+    
+    try {
+      const response = await fetch(`${API_BASE_URL}/api/user/profile`, {
+        headers: {
+          'Authorization': `Bearer ${token}`,
+        },
+      });
+
+      if (response.ok) {
+        const userData = await response.json();
+        setUser(prev => prev ? { ...prev, isPremium: userData.isPremium } : null);
+      }
+    } catch (error) {
+      console.error('Error refreshing user:', error);
+    }
+  };
+
   return (
     <AuthContext.Provider
       value={{
@@ -117,6 +142,8 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
         isLoading,
         isAuthenticated,
         isAdmin,
+        isPremium,
+        refreshUser,
       }}
     >
       {children}

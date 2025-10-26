@@ -16,6 +16,7 @@ import Dashboard from "./components/dashboard/dashboard";
 import AdminPage from "./pages/admin";
 import RankingPage from "./pages/ranking";
 import SimpleRankingPage from "./pages/simple-ranking";
+import PricingPage from "./pages/pricing";
 
 function Router() {
   return (
@@ -29,6 +30,7 @@ function Router() {
       <Route path="/admin" component={AdminPage} />
       <Route path="/ranking" component={RankingPage} />
       <Route path="/simple-ranking" component={SimpleRankingPage} />
+      <Route path="/pricing" component={PricingPage} />
       <Route component={NotFound} />
     </Switch>
   );

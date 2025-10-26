@@ -4,10 +4,12 @@ import { Card, CardContent } from "@/components/ui/card";
 import { AlertCircle } from "lucide-react";
 import { Button } from "../ui/button";
 import { useLocation } from "wouter";
+import { useToast } from "../../hooks/use-toast";
 
 export default function DashboardContent() {
     const { startDashboard, quizCompleted, error, isLoading } = useDashboard();
     const [, setLocation] = useLocation();
+    const { toast } = useToast();
     
     const handleStartDashboard = async () => {
         try {
@@ -18,12 +20,33 @@ export default function DashboardContent() {
     };
 
     useEffect(() => {
+        const urlParams = new URLSearchParams(window.location.search);
+        const paymentStatus = urlParams.get('payment');
+        const plan = urlParams.get('plan');
+        const amount = urlParams.get('amount');
+        
+        if (paymentStatus === 'success') {
+            const valorFormatado = amount ? `R$ ${(parseInt(amount) / 100).toFixed(2)}` : 'R$ 9,90';
+            
+            toast({
+                title: "🎉 Pagamento realizado com sucesso!",
+                description: `Seu plano ${plan || 'premium'} (${valorFormatado}) foi ativado. Aproveite todos os recursos!`,
+                duration: 8000,
+            });
+            
+            window.history.replaceState({}, '', '/dashboard');
+            
+            setTimeout(() => {
+                window.location.reload();
+            }, 3000);
+        }
+        
         const run = async () => {
             handleStartDashboard();
         };
 
         run();
-    }, []);
+    }, [toast]);
 
     // Mostrar erro no estilo not-found
     if (error) {
