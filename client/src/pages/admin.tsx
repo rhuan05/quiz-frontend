@@ -9,7 +9,7 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from '../components/ui/tabs'
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from '../components/ui/dialog';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '../components/ui/select';
 import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle, AlertDialogTrigger } from '../components/ui/alert-dialog';
-import { Trash2, Edit, Plus, Eye, AlertCircle, Calendar, Lock, Unlock, Save, X } from 'lucide-react';
+import { Trash2, Edit, Plus, AlertCircle, Calendar, Lock, Unlock, Save, X } from 'lucide-react';
 import { useLocation } from 'wouter';
 import { Switch } from '../components/ui/switch';
 import { Label } from '../components/ui/label';
@@ -72,7 +72,7 @@ interface QuestionForm {
 }
 
 export default function AdminPage() {
-  const { user, isAdmin, token } = useAuth();
+  const { token } = useAuth();
   const [, setLocation] = useLocation();
   const [questions, setQuestions] = useState<Question[]>([]);
   const [categories, setCategories] = useState<Category[]>([]);
@@ -607,7 +607,7 @@ export default function AdminPage() {
                         <div>
                           <p className="text-sm font-medium text-gray-700 mb-1">Opções:</p>
                           <div className="space-y-1">
-                            {question.options.map((option, index) => (
+                            {question.options.map((option) => (
                               <div key={option.id} className="flex items-center text-sm">
                                 <span className={`w-2 h-2 rounded-full mr-2 ${
                                   option.isCorrect ? 'bg-green-500' : 'bg-gray-300'

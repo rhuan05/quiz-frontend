@@ -7,12 +7,33 @@ import { Label } from "../components/ui/label";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "../components/ui/card";
 import { Alert, AlertDescription } from "../components/ui/alert";
 import { Loader2 } from "lucide-react";
+import { GoogleLoginButton } from "../components/auth/google-login-button";
+import { CompleteProfileModal } from "../components/auth/complete-profile-modal";
+import { EmailVerificationModal } from "../components/auth/email-verification-modal";
 
 export default function RegisterContent() {
     const [message, setMessage] = useState<string | null>(null);
     const [isLoading, setIsLoading] = useState(false);
     const [isSuccess, setIsSuccess] = useState(false);
     const [, setLocation] = useLocation();
+    const [username, setUsername] = useState('');
+    
+    const handleUsernameChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+        const value = e.target.value;
+        const formattedValue = value
+            .replace(/\s+/g, '')
+            .replace(/[^a-zA-Z0-9._]/g, '')
+            .toLowerCase();
+        setUsername(formattedValue);
+    };
+    
+    const [showCompleteProfile, setShowCompleteProfile] = useState(false);
+    const [showEmailVerification, setShowEmailVerification] = useState(false);
+    const [oauthData, setOauthData] = useState<{
+        email: string;
+        needsPhone?: boolean;
+        needsUsername?: boolean;
+    } | null>(null);
     
     async function handleSubmit(e: React.FormEvent){
         e.preventDefault();
@@ -32,9 +53,15 @@ export default function RegisterContent() {
             } else {
                 setMessage(result.message);
                 setIsSuccess(true);
-                setTimeout(() => {
-                    setLocation('/login');
-                }, 2000);
+                
+                if (result.requiresEmailVerification) {
+                    setOauthData({ email: data.email as string });
+                    setShowEmailVerification(true);
+                } else {
+                    setTimeout(() => {
+                        setLocation('/login');
+                    }, 2000);
+                }
             }
         } catch (err: any) {
             setMessage(err.message);
@@ -43,6 +70,29 @@ export default function RegisterContent() {
             setIsLoading(false);
         }
     }
+
+    const handleGoogleSuccess = () => {
+        setLocation('/quiz');
+    };
+
+    const handleGoogleRequiresInfo = (data: { email: string; needsPhone?: boolean; needsUsername?: boolean }) => {
+        setOauthData(data);
+        if (data.needsPhone || data.needsUsername) {
+            setShowCompleteProfile(true);
+        } else {
+            setLocation('/quiz');
+        }
+    };
+
+    const handleCompleteProfile = () => {
+        setShowCompleteProfile(false);
+        setLocation('/quiz');
+    };
+
+    const handleEmailVerified = () => {
+        setShowEmailVerification(false);
+        setLocation('/login');
+    };
 
     return (
         <div className="min-h-screen flex items-center justify-center bg-gray-50 py-12 px-4 sm:px-6 lg:px-8">
@@ -77,10 +127,16 @@ export default function RegisterContent() {
                                     type="text"
                                     name="username"
                                     id="username"
-                                    placeholder="Digite seu nome de usuário"
+                                    value={username}
+                                    onChange={handleUsernameChange}
+                                    placeholder="ex: joaosilva123"
                                     disabled={isLoading}
                                     required
+                                    className="font-mono"
                                 />
+                                <p className="text-xs text-gray-500">
+                                    Apenas letras, números, pontos e underscores. Sem espaços.
+                                </p>
                             </div>
 
                             <div className="space-y-2">
@@ -122,6 +178,23 @@ export default function RegisterContent() {
                                 )}
                             </Button>
 
+                            <div className="relative">
+                                <div className="absolute inset-0 flex items-center">
+                                    <span className="w-full border-t" />
+                                </div>
+                                <div className="relative flex justify-center text-xs uppercase">
+                                    <span className="bg-background px-2 text-muted-foreground">
+                                        Ou continue com
+                                    </span>
+                                </div>
+                            </div>
+
+                            <GoogleLoginButton
+                                onSuccess={handleGoogleSuccess}
+                                onRequiresAdditionalInfo={handleGoogleRequiresInfo}
+                                className="w-full"
+                            />
+
                             <div className="text-center">
                                 <p className="text-sm text-gray-600">
                                     Já tem uma conta?{' '}
@@ -137,6 +210,27 @@ export default function RegisterContent() {
                         </form>
                     </CardContent>
                 </Card>
+
+                {/* Modais OAuth */}
+                {showCompleteProfile && oauthData && (
+                    <CompleteProfileModal
+                        isOpen={showCompleteProfile}
+                        onClose={() => setShowCompleteProfile(false)}
+                        onComplete={handleCompleteProfile}
+                        email={oauthData.email}
+                        needsPhone={oauthData.needsPhone}
+                        needsUsername={oauthData.needsUsername}
+                    />
+                )}
+
+                {showEmailVerification && oauthData && (
+                    <EmailVerificationModal
+                        isOpen={showEmailVerification}
+                        onClose={() => setShowEmailVerification(false)}
+                        onVerified={handleEmailVerified}
+                        email={oauthData.email}
+                    />
+                )}
             </div>
         </div>
     );

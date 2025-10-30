@@ -1,4 +1,4 @@
-import { useState } from "react";
+
 import { Button } from "../../components/ui/button";
 import { useToast } from "../../hooks/use-toast";
 import { Share, Twitter, Linkedin, Copy, X } from "lucide-react";
@@ -11,7 +11,7 @@ interface ShareModalProps {
 
 export default function ShareModal({ score, performanceLevel, onClose }: ShareModalProps) {
   const { toast } = useToast();
-  const [isSharing, setIsSharing] = useState(false);
+
 
   const shareText = `🎯 Consegui ${score}% no Quiz de JavaScript! Nível ${performanceLevel}. Teste seus conhecimentos também:`;
   const shareUrl = window.location.origin;

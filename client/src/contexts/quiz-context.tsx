@@ -1,5 +1,5 @@
 import { createContext, useContext, useReducer, ReactNode } from "react";
-import type { QuestionWithOptions } from "../../../../backend/shared/schema";
+import type { QuestionWithOptions } from "../types/quiz";
 
 interface QuizState {
   sessionToken: string | null;

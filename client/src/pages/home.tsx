@@ -95,7 +95,7 @@ export default function Home() {
 
   };
 
-  const handleAuth = async (email: string, password: string) => {
+  const handleAuth = async (_email: string, _password: string) => {
     try {
       setAuthError(''); // Limpar erros anteriores
       

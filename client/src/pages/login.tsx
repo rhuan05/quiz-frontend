@@ -7,6 +7,9 @@ import { Label } from '../components/ui/label';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '../components/ui/card';
 import { Alert, AlertDescription } from '../components/ui/alert';
 import { Loader2 } from 'lucide-react';
+import { GoogleLoginButton } from '../components/auth/google-login-button';
+import { CompleteProfileModal } from '../components/auth/complete-profile-modal';
+import { EmailVerificationModal } from '../components/auth/email-verification-modal';
 
 export default function Login() {
   const [email, setEmail] = useState('');
@@ -14,6 +17,14 @@ export default function Login() {
   const [error, setError] = useState('');
   const { login, isLoading } = useAuth();
   const [, setLocation] = useLocation();
+  
+  const [showCompleteProfile, setShowCompleteProfile] = useState(false);
+  const [showEmailVerification, setShowEmailVerification] = useState(false);
+  const [oauthData, setOauthData] = useState<{
+    email: string;
+    needsPhone?: boolean;
+    needsUsername?: boolean;
+  } | null>(null);
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -30,6 +41,29 @@ export default function Login() {
     } catch (err: any) {
       setError(err.message || 'Erro ao fazer login. Tente novamente.');
     }
+  };
+
+  const handleGoogleSuccess = () => {
+    setLocation('/quiz');
+  };
+
+  const handleGoogleRequiresInfo = (data: { email: string; needsPhone?: boolean; needsUsername?: boolean }) => {
+    setOauthData(data);
+    if (data.needsPhone || data.needsUsername) {
+      setShowCompleteProfile(true);
+    } else {
+      setLocation('/quiz');
+    }
+  };
+
+  const handleCompleteProfile = () => {
+    setShowCompleteProfile(false);
+    setLocation('/quiz');
+  };
+
+  const handleEmailVerified = () => {
+    setShowEmailVerification(false);
+    setLocation('/quiz');
   };
 
   return (
@@ -100,6 +134,23 @@ export default function Login() {
                 )}
               </Button>
 
+              <div className="relative">
+                <div className="absolute inset-0 flex items-center">
+                  <span className="w-full border-t" />
+                </div>
+                <div className="relative flex justify-center text-xs uppercase">
+                  <span className="bg-background px-2 text-muted-foreground">
+                    Ou continue com
+                  </span>
+                </div>
+              </div>
+
+              <GoogleLoginButton
+                onSuccess={handleGoogleSuccess}
+                onRequiresAdditionalInfo={handleGoogleRequiresInfo}
+                className="w-full"
+              />
+
               <div className="text-center">
                 <p className="text-sm text-gray-600">
                   Não tem uma conta?{' '}
@@ -115,6 +166,27 @@ export default function Login() {
             </form>
           </CardContent>
         </Card>
+
+        {/* Modais OAuth */}
+        {showCompleteProfile && oauthData && (
+          <CompleteProfileModal
+            isOpen={showCompleteProfile}
+            onClose={() => setShowCompleteProfile(false)}
+            onComplete={handleCompleteProfile}
+            email={oauthData.email}
+            needsPhone={oauthData.needsPhone}
+            needsUsername={oauthData.needsUsername}
+          />
+        )}
+
+        {showEmailVerification && oauthData && (
+          <EmailVerificationModal
+            isOpen={showEmailVerification}
+            onClose={() => setShowEmailVerification(false)}
+            onVerified={handleEmailVerified}
+            email={oauthData.email}
+          />
+        )}
       </div>
     </div>
   );
