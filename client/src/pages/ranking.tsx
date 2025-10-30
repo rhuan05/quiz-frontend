@@ -1,5 +1,4 @@
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
-import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
 import { Trophy, Medal, Award, TrendingUp, Users, Star, User } from 'lucide-react';
 import LoadingOverlay from '@/components/layout/loading-overlay';
@@ -9,16 +8,36 @@ import { useState } from 'react';
 export default function RankingPage() {
   const { users, isLoading, error, refetch } = useRanking();
 
-  const getPositionIcon = (position: number) => {
+  const getPositionIcon = (position: number, totalScore: number) => {
     switch (position) {
       case 1:
-        return <Trophy className="h-6 w-6 text-yellow-500" />;
+        return (
+          <div className="flex items-center gap-2">
+            <Trophy className="h-6 w-6 text-yellow-500" />
+            <span className="text-sm font-semibold text-yellow-600">{totalScore} pts</span>
+          </div>
+        );
       case 2:
-        return <Medal className="h-6 w-6 text-gray-400" />;
+        return (
+          <div className="flex items-center gap-2">
+            <Medal className="h-6 w-6 text-gray-400" />
+            <span className="text-sm font-semibold text-gray-600">{totalScore} pts</span>
+          </div>
+        );
       case 3:
-        return <Award className="h-6 w-6 text-amber-600" />;
+        return (
+          <div className="flex items-center gap-2">
+            <Award className="h-6 w-6 text-amber-600" />
+            <span className="text-sm font-semibold text-amber-700">{totalScore} pts</span>
+          </div>
+        );
       default:
-        return <span className="text-lg font-bold text-gray-600">#{position}</span>;
+        return (
+          <div className="flex items-center gap-2">
+            <span className="text-lg font-bold text-gray-600">#{position}</span>
+            <span className="text-sm font-semibold text-gray-600">{totalScore} pts</span>
+          </div>
+        );
     }
   };
 
@@ -56,12 +75,7 @@ export default function RankingPage() {
     );
   };
 
-  const getLevelBadgeColor = (level: number) => {
-    if (level >= 10) return 'bg-purple-500';
-    if (level >= 7) return 'bg-red-500';
-    if (level >= 4) return 'bg-orange-500';
-    return 'bg-green-500';
-  };
+
 
   if (isLoading) {
     return <LoadingOverlay />;
@@ -152,8 +166,8 @@ export default function RankingPage() {
                   {/* Layout mobile: stack vertical */}
                   <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
                     <div className="flex items-center space-x-3 sm:space-x-4 min-w-0 flex-1">
-                      <div className="flex items-center justify-center w-10 h-10 sm:w-12 sm:h-12 flex-shrink-0">
-                        {getPositionIcon(user.position || 0)}
+                      <div className="flex items-center justify-center flex-shrink-0">
+                        {getPositionIcon(user.position || 0, user.totalScore)}
                       </div>
 
                       <div className="flex-shrink-0">
@@ -161,25 +175,15 @@ export default function RankingPage() {
                       </div>
 
                       <div className="flex-1 min-w-0">
-                        <div className="flex flex-col sm:flex-row sm:items-center gap-2 sm:gap-3 mb-1">
+                        <div className="flex flex-col gap-1">
                           <h3 className="text-base sm:text-lg font-semibold text-gray-900 truncate">
                             {user.displayName || user.username}
                           </h3>
-                          <Badge className={`${getLevelBadgeColor(Math.floor(user.totalScore / 100) + 1)} text-white text-xs sm:text-sm flex-shrink-0 w-fit rounded-full px-2 py-1`}>
-                            Nível {Math.floor(user.totalScore / 100) + 1}
-                          </Badge>
-                        </div>
-                        <div className="text-xs sm:text-sm text-gray-500">
-                          Posição #{user.position}
+                          <div className="text-xs sm:text-sm text-gray-500">
+                            {user.totalSessions} quizzes completados
+                          </div>
                         </div>
                       </div>
-                    </div>
-
-                    <div className="text-center sm:text-right flex-shrink-0">
-                      <div className="text-xl sm:text-2xl font-bold text-primary">
-                        {user.totalScore}
-                      </div>
-                      <div className="text-xs sm:text-sm text-gray-600">Pontos</div>
                     </div>
                   </div>
                 </CardContent>
