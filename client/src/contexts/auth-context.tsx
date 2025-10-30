@@ -6,14 +6,22 @@ interface User {
   id: string;
   email: string;
   username: string;
+  displayName?: string;
+  avatar?: string;
   role: 'admin' | 'user';
   isPremium: boolean;
+  emailVerified?: boolean;
+  phoneVerified?: boolean;
 }
 
 interface AuthContextType {
   user: User | null;
   token: string | null;
   login: (email: string, password: string) => Promise<void>;
+  loginWithGoogle: (googleToken: string) => Promise<{ requiresAdditionalInfo?: boolean; needsPhone?: boolean; needsUsername?: boolean; email?: string }>;
+  completeGoogleAuth: (data: { email: string; phone?: string; username?: string }) => Promise<void>;
+  sendVerificationEmail: (email: string) => Promise<void>;
+  verifyEmail: (email: string, code: string) => Promise<void>;
   logout: () => void;
   isLoading: boolean;
   isAuthenticated: boolean;
@@ -132,12 +140,130 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     }
   };
 
+  const loginWithGoogle = async (googleToken: string) => {
+    setIsLoading(true);
+    try {
+      const response = await fetch(`${API_BASE_URL}/api/auth/google`, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({ token: googleToken }),
+      });
+
+      if (!response.ok) {
+        const error = await response.json();
+        throw new Error(error.message || 'Login com Google falhou');
+      }
+
+      const data = await response.json();
+      
+      if (data.requiresAdditionalInfo) {
+        return {
+          requiresAdditionalInfo: true,
+          needsPhone: data.needsPhone,
+          needsUsername: data.needsUsername,
+          email: data.email,
+        };
+      }
+
+      setToken(data.token);
+      localStorage.setItem('authToken', data.token);
+      setUser(data.user);
+      
+      return {};
+    } catch (error) {
+      console.error('Google login error:', error);
+      throw error;
+    } finally {
+      setIsLoading(false);
+    }
+  };
+
+  const completeGoogleAuth = async (data: { email: string; phone?: string; username?: string }) => {
+    setIsLoading(true);
+    try {
+      const response = await fetch(`${API_BASE_URL}/api/auth/google/complete`, {
+        method: 'PATCH',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify(data),
+      });
+
+      if (!response.ok) {
+        const error = await response.json();
+        throw new Error(error.message || 'Erro ao completar autenticação');
+      }
+
+      const result = await response.json();
+      
+      setToken(result.token);
+      localStorage.setItem('authToken', result.token);
+      setUser(result.user);
+      
+    } catch (error) {
+      console.error('Complete Google auth error:', error);
+      throw error;
+    } finally {
+      setIsLoading(false);
+    }
+  };
+
+  const sendVerificationEmail = async (email: string) => {
+    try {
+      const response = await fetch(`${API_BASE_URL}/api/auth/send-verification`, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({ email }),
+      });
+
+      if (!response.ok) {
+        const error = await response.json();
+        throw new Error(error.message || 'Erro ao enviar email de verificação');
+      }
+    } catch (error) {
+      console.error('Send verification email error:', error);
+      throw error;
+    }
+  };
+
+  const verifyEmail = async (email: string, code: string) => {
+    try {
+      const response = await fetch(`${API_BASE_URL}/api/auth/verify-email`, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({ email, code }),
+      });
+
+      if (!response.ok) {
+        const error = await response.json();
+        throw new Error(error.message || 'Código inválido ou expirado');
+      }
+      
+      if (user && user.email === email) {
+        setUser(prev => prev ? { ...prev, emailVerified: true } : null);
+      }
+    } catch (error) {
+      console.error('Verify email error:', error);
+      throw error;
+    }
+  };
+
   return (
     <AuthContext.Provider
       value={{
         user,
         token,
         login,
+        loginWithGoogle,
+        completeGoogleAuth,
+        sendVerificationEmail,
+        verifyEmail,
         logout,
         isLoading,
         isAuthenticated,

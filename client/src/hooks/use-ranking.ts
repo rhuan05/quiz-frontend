@@ -5,6 +5,8 @@ export interface RankingUser {
   id: string;
   username: string;
   email: string;
+  avatar?: string;
+  displayName?: string;
   totalScore: number;
   streak: number;
   totalSessions: number;
@@ -46,6 +48,8 @@ export function useRanking() {
         id: user.id,
         username: user.username,
         email: user.email,
+        avatar: user.avatar,
+        displayName: user.displayName,
         totalScore: user.totalScore || 0,
         streak: user.streak || 0,
         totalSessions: user.totalSessions || 0,

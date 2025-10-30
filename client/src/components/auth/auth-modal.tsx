@@ -9,6 +9,9 @@ import { useAuth } from '../../contexts/auth-context';
 import { apiRequest } from '../../lib/queryClient';
 import { useQuiz } from '../../hooks/use-quiz';
 import { useLocation } from 'wouter';
+import { GoogleLoginButton } from './google-login-button';
+import { CompleteProfileModal } from './complete-profile-modal';
+import { EmailVerificationModal } from './email-verification-modal';
 
 interface AuthModalProps {
   isOpen: boolean;
@@ -18,19 +21,39 @@ interface AuthModalProps {
   error?: string;
 }
 
-export function AuthModal({ isOpen, onClose, onAuth, loading, error }: AuthModalProps) {
+export function AuthModal({ isOpen, onClose }: AuthModalProps) {
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
   const [username, setUsername] = useState('');
   const [showPassword, setShowPassword] = useState(false);
+
+  const handleUsernameChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const value = e.target.value;
+    const formattedValue = value
+      .replace(/\s+/g, '')
+      .replace(/[^a-zA-Z0-9._]/g, '')
+      .toLowerCase();
+    setUsername(formattedValue);
+  };
   const [isLogin, setIsLogin] = useState(true);
   const [formErrors, setFormErrors] = useState<{username?: string, email?: string; password?: string}>({});
   const { login } = useAuth();
   const [message, setMessage] = useState<string | null>(null);
-  const [isLoading, setIsLoading] = useState(false);
   const [isSuccess, setIsSuccess] = useState(false);
-  const { startQuiz, isLoadingQuiz, state } = useQuiz();
+  const [isLoading, setIsLoading] = useState(false);
+  const { startQuiz } = useQuiz();
   const [, setLocation] = useLocation();
+
+  const [showCompleteProfile, setShowCompleteProfile] = useState(false);
+  const [showEmailVerification, setShowEmailVerification] = useState(false);
+  const [oauthData, setOauthData] = useState<{
+    email: string;
+    needsPhone?: boolean;
+    needsUsername?: boolean;
+  } | null>(null);
+  const [, setRequiresEmailVerification] = useState(false);
+
+  const loading = isLoading;
 
   const validateForm = () => {
     const newErrors: {username?: string, email?: string; password?: string} = {};
@@ -98,10 +121,15 @@ export function AuthModal({ isOpen, onClose, onAuth, loading, error }: AuthModal
         } else {
             setMessage(result.message);
             setIsSuccess(true);
-            // Redirect to login after 2 seconds
-            setTimeout(() => {
-              setIsLogin(!isLogin);
-            }, 2000);
+            
+            if (result.requiresEmailVerification) {
+              setRequiresEmailVerification(true);
+              setShowEmailVerification(true);
+            } else {
+              setTimeout(() => {
+                setIsLogin(!isLogin);
+              }, 2000);
+            }
         }
       } catch (error: any) {
           setMessage(error.message || "Erro desconhecido.");
@@ -128,6 +156,46 @@ export function AuthModal({ isOpen, onClose, onAuth, loading, error }: AuthModal
     setIsLogin(!isLogin);
     setFormErrors({});
     setMessage(null);
+  };
+
+  const handleGoogleSuccess = () => {
+    handleStartQuizAfterAuth();
+  };
+
+  const handleGoogleRequiresInfo = (data: { email: string; needsPhone?: boolean; needsUsername?: boolean }) => {
+    setOauthData(data);
+    if (data.needsPhone || data.needsUsername) {
+      setShowCompleteProfile(true);
+    } else {
+      handleStartQuizAfterAuth();
+    }
+  };
+
+  const handleCompleteProfile = () => {
+    setShowCompleteProfile(false);
+    handleStartQuizAfterAuth();
+  };
+
+  const handleEmailVerified = () => {
+    setShowEmailVerification(false);
+    setRequiresEmailVerification(false);
+    setMessage("Email verificado com sucesso! Faça login para continuar.");
+    setIsSuccess(true);
+    setIsLogin(true);
+  };
+
+  const handleStartQuizAfterAuth = async () => {
+    try {
+      setIsLoading(true);
+      await startQuiz();
+      onClose();
+      setLocation('/quiz');
+    } catch (error: any) {
+      setMessage(error.message || "Erro ao iniciar quiz");
+      setIsSuccess(false);
+    } finally {
+      setIsLoading(false);
+    }
   };
 
   return (
@@ -159,12 +227,15 @@ export function AuthModal({ isOpen, onClose, onAuth, loading, error }: AuthModal
                   type="text"
                   name="username"
                   id="username"
-                  placeholder="Digite seu nome de usuário"
+                  placeholder="ex: joaosilva123"
                   disabled={loading}
                   value={username}
-                  onChange={(e) => setUsername(e.target.value)}
-                  className={formErrors.username ? 'border-red-500 focus:border-red-500' : ''}
+                  onChange={handleUsernameChange}
+                  className={`font-mono ${formErrors.username ? 'border-red-500 focus:border-red-500' : ''}`}
               />
+              <p className="text-xs text-gray-500">
+                Apenas letras, números, pontos e underscores. Sem espaços.
+              </p>
           </div> : <></>}
 
           {/* Campo Email */}
@@ -247,6 +318,23 @@ export function AuthModal({ isOpen, onClose, onAuth, loading, error }: AuthModal
                 isLogin ? 'Entrar e Começar Quiz' : 'Criar Conta e Começar Quiz'
               )}
             </Button>
+
+            {/* Divider */}
+            <div className="relative">
+              <div className="absolute inset-0 flex items-center">
+                <span className="w-full border-t" />
+              </div>
+              <div className="relative flex justify-center text-xs uppercase">
+                <span className="bg-white px-2 text-gray-500">ou</span>
+              </div>
+            </div>
+
+            {/* Google Login */}
+            <GoogleLoginButton
+              onSuccess={handleGoogleSuccess}
+              onRequiresAdditionalInfo={handleGoogleRequiresInfo}
+              className="w-full"
+            />
             
             <div className="text-center">
               <button
@@ -261,6 +349,29 @@ export function AuthModal({ isOpen, onClose, onAuth, loading, error }: AuthModal
           </div>
         </form>
       </DialogContent>
+
+      {/* Modal para completar perfil OAuth */}
+      {oauthData && (
+        <CompleteProfileModal
+          isOpen={showCompleteProfile}
+          onClose={() => setShowCompleteProfile(false)}
+          onComplete={handleCompleteProfile}
+          email={oauthData.email}
+          needsPhone={oauthData.needsPhone}
+          needsUsername={oauthData.needsUsername}
+        />
+      )}
+
+      {/* Modal para verificação de email */}
+      <EmailVerificationModal
+        isOpen={showEmailVerification}
+        onClose={() => {
+          setShowEmailVerification(false);
+          setRequiresEmailVerification(false);
+        }}
+        onVerified={handleEmailVerified}
+        email={email}
+      />
     </Dialog>
   );
 }

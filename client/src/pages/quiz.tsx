@@ -67,7 +67,7 @@ export default function Quiz() {
     if (currentQuestionIndex >= questions.length - 1) {
       // Quiz complete
       try {
-        const results = await completeQuiz(timeSpent);
+        await completeQuiz(timeSpent);
         setLocation(`/results/${sessionToken}`);
       } catch (error) {
         console.error("Failed to complete quiz:", error);

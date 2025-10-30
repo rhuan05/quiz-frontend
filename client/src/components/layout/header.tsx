@@ -1,10 +1,31 @@
 import { Button } from "../../components/ui/button";
 import { useLocation } from "wouter";
-import { Code, LogIn, LogOut, Menu, X, Trophy, Crown, CreditCard } from "lucide-react";
+import { Code, LogIn, LogOut, Menu, X, Trophy, Crown, CreditCard, User } from "lucide-react";
 import { useQuiz } from "../../hooks/use-quiz";
 import { useAuth } from "../../contexts/auth-context";
 import { useState } from 'react';
 import { AuthModal } from "../auth/auth-modal";
+
+const UserAvatar = ({ user }: { user: any }) => {
+  const [imageError, setImageError] = useState(false);
+  
+  if (!user.avatar || imageError) {
+    return (
+      <div className="w-8 h-8 rounded-full bg-gray-100 border border-gray-200 flex items-center justify-center">
+        <User className="w-4 h-4 text-gray-400" />
+      </div>
+    );
+  }
+  
+  return (
+    <img
+      src={user.avatar}
+      alt={user.displayName || user.username || 'Usuário'}
+      className="w-8 h-8 rounded-full object-cover border border-gray-200"
+      onError={() => setImageError(true)}
+    />
+  );
+};
 
 export default function Header() {
   const [location, setLocation] = useLocation();
@@ -28,7 +49,7 @@ export default function Header() {
     }
   };
 
-  const handleAuth = async (email: string, password: string) => {
+  const handleAuth = async (_email: string, _password: string) => {
     try {      
       setAuthError('');
       const sessionToken = await startQuiz();
@@ -154,6 +175,14 @@ export default function Header() {
               )}
 
               <div className="flex items-center space-x-4 ml-6 border-l border-gray-200 pl-6">
+                {isAuthenticated && user && (
+                  <div className="flex items-center space-x-3">
+                    <UserAvatar user={user} />
+                    <span className="text-sm font-medium text-gray-700">
+                      {user.displayName || user.username}
+                    </span>
+                  </div>
+                )}
                 <AuthButtons />
               </div>
             </nav>
@@ -168,6 +197,15 @@ export default function Header() {
 
               {isMenuOpen && (
                 <div className="absolute top-16 right-4 bg-white shadow-lg rounded-md p-4 w-60 space-y-2 z-50">
+                  {isAuthenticated && user && (
+                    <div className="flex items-center space-x-3 pb-3 border-b border-gray-200 mb-3">
+                      <UserAvatar user={user} />
+                      <span className="text-sm font-medium text-gray-700">
+                        {user.displayName || user.username}
+                      </span>
+                    </div>
+                  )}
+                  
                   <Button
                     variant="ghost"
                     onClick={() => {

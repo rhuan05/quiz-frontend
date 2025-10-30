@@ -2,7 +2,7 @@ import { Card, CardContent } from "../../components/ui/card";
 import { Button } from "../../components/ui/button";
 import { Badge } from "../../components/ui/badge";
 import { SkipForward } from "lucide-react";
-import type { QuestionWithOptions } from "../../../../../backend/shared/schema";
+import type { QuestionWithOptions } from "../../types/quiz";
 
 interface QuestionCardProps {
   question: QuestionWithOptions;
@@ -38,10 +38,10 @@ export default function QuestionCard({
         <div className="mb-6">
           <div className="flex items-center space-x-2 mb-4">
             <Badge className="bg-primary/10 text-primary">
-              {question.category.name}
+              {question.category?.name || 'Geral'}
             </Badge>
-            <Badge className={getDifficultyColor(question.difficulty.label)}>
-              {question.difficulty.label}
+            <Badge className={getDifficultyColor(question.difficulty?.label || 'medium')}>
+              {question.difficulty?.label || 'Médio'}
             </Badge>
           </div>
 

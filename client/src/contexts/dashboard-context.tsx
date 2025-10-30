@@ -1,4 +1,4 @@
-import { QuizSession } from "../../../../backend/shared/schema";
+import { QuizSession } from "../types/quiz";
 import React, { createContext, ReactNode, useContext, useReducer } from "react"
 
 interface DashboardState {

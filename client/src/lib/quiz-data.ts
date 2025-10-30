@@ -1,7 +1,4 @@
-import type { QuestionWithOptions } from "frontend/shared/schema";
-
-// This file contains sample quiz data for development
-// In production, this data should come from the database
+import type { QuestionWithOptions } from "../types/quiz";
 
 export const sampleQuestions: QuestionWithOptions[] = [
   {
@@ -77,5 +74,4 @@ console.log(null == undefined);`,
       },
     ],
   },
-  // Add more sample questions here for development...
 ];

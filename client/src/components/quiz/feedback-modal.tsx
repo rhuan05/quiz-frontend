@@ -1,6 +1,6 @@
 import { Button } from "../../components/ui/button";
 import { ArrowRight, Check, X } from "lucide-react";
-import type { Option } from "../../../../../backend/shared/schema";
+import type { Option } from "../../types/quiz";
 
 interface FeedbackModalProps {
   isCorrect: boolean;

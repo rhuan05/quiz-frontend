@@ -6,7 +6,7 @@ import { Button } from "../components/ui/button";
 import ShareModal from "../components/quiz/share-modal";
 import LoadingOverlay from "../components/layout/loading-overlay";
 import { useState } from "react";
-import { Trophy, RotateCcw, Share, BarChart3, Medal, Clock } from "lucide-react";
+import { Trophy, RotateCcw, Share, BarChart3, Medal } from "lucide-react";
 import { useQuiz } from "../hooks/use-quiz";
 
 export default function Results() {
@@ -51,7 +51,10 @@ export default function Results() {
     );
   }
 
-  const { session, performanceLevel, averageTime, categoryBreakdown } = results;
+  const session = (results as any)?.session || {};
+  const performanceLevel = (results as any)?.performanceLevel || 'Iniciante';
+  const averageTime = (results as any)?.averageTime || 0;
+  const categoryBreakdown = (results as any)?.categoryBreakdown || {};
 
   const formatTime = (seconds: number) => {
     const mins = Math.floor(seconds / 60);

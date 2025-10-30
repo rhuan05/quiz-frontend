@@ -18,7 +18,7 @@ interface DailyLimitBannerProps {
 }
 
 export function DailyLimitBanner({ onLimitReached }: DailyLimitBannerProps) {
-  const { token, user, isAuthenticated } = useAuth();
+  const { token, isAuthenticated } = useAuth();
   const [limitInfo, setLimitInfo] = useState<DailyLimitInfo | null>(null);
   const [isLoading, setIsLoading] = useState(true);
 

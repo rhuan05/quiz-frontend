@@ -1,6 +1,7 @@
 import { Switch, Route } from "wouter";
 import { queryClient } from "./lib/queryClient";
 import { QueryClientProvider } from "@tanstack/react-query";
+import { GoogleOAuthProvider } from '@react-oauth/google';
 import { Toaster } from "./components/ui/toaster";
 import { TooltipProvider } from "./components/ui/tooltip";
 import { QuizProvider } from "./contexts/quiz-context";
@@ -37,20 +38,29 @@ function Router() {
 }
 
 function App() {
+  // Configuração do Google OAuth - verificar se a variável existe
+  const googleClientId = (import.meta as any).env.VITE_GOOGLE_CLIENT_ID;
+  
+  if (!googleClientId) {
+    console.error('❌ VITE_GOOGLE_CLIENT_ID não configurado no .env');
+  }
+
   return (
-    <QueryClientProvider client={queryClient}>
-      <TooltipProvider>
-        <AuthProvider>
-          <QuizProvider>
-            <div className="min-h-screen bg-gray-50">
-              <Header />
-              <Toaster />
-              <Router />
-            </div>
-          </QuizProvider>
-        </AuthProvider>
-      </TooltipProvider>
-    </QueryClientProvider>
+    <GoogleOAuthProvider clientId={googleClientId || ''}>
+      <QueryClientProvider client={queryClient}>
+        <TooltipProvider>
+          <AuthProvider>
+            <QuizProvider>
+              <div className="min-h-screen bg-gray-50">
+                <Header />
+                <Toaster />
+                <Router />
+              </div>
+            </QuizProvider>
+          </AuthProvider>
+        </TooltipProvider>
+      </QueryClientProvider>
+    </GoogleOAuthProvider>
   );
 }
 
