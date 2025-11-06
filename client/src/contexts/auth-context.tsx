@@ -52,19 +52,40 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
   // Check for existing token on mount
   useEffect(() => {
     const savedToken = localStorage.getItem('authToken');
+    const savedUser = localStorage.getItem('authUser');
+    
     if (savedToken) {
       const decoded = decodeToken(savedToken);
       if (decoded && decoded.exp > Date.now() / 1000) {
         setToken(savedToken);
-        setUser({
-          id: decoded.id,
-          email: decoded.email, // Backend uses username field for email
-          username: decoded.username,
-          role: decoded.role || 'user'
-        });
+        
+        // Try to load full user data from localStorage first
+        if (savedUser) {
+          try {
+            const userData = JSON.parse(savedUser);
+            setUser(userData);
+          } catch {
+            setUser({
+              id: decoded.id,
+              email: decoded.email,
+              username: decoded.username,
+              role: decoded.role || 'user',
+              isPremium: false
+            });
+          }
+        } else {
+          setUser({
+            id: decoded.id,
+            email: decoded.email,
+            username: decoded.username,
+            role: decoded.role || 'user',
+            isPremium: false
+          });
+        }
       } else {
         // Token expired, remove it
         localStorage.removeItem('authToken');
+        localStorage.removeItem('authUser');
       }
     }
     setIsLoading(false);
@@ -94,12 +115,15 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
       // Decode user info from token
       const decoded = decodeToken(data.token);
       if (decoded) {
-        setUser({
+        const userData = {
           id: decoded.id,
-          email: decoded.email, // Backend uses email field for email
+          email: decoded.email,
           username: decoded.username,
-          role: decoded.role || 'user'
-        });
+          role: decoded.role || 'user',
+          isPremium: false
+        };
+        setUser(userData);
+        localStorage.setItem('authUser', JSON.stringify(userData));
       }
     } catch (error) {
       console.error('Login error:', error);
@@ -113,26 +137,8 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     setUser(null);
     setToken(null);
     localStorage.removeItem('authToken');
+    localStorage.removeItem('authUser');
     setLocation('/')
-  };
-
-  const refreshUser = async () => {
-    if (!token) return;
-    
-    try {
-      const response = await fetch(`${API_BASE_URL}/api/user/profile`, {
-        headers: {
-          'Authorization': `Bearer ${token}`,
-        },
-      });
-
-      if (response.ok) {
-        const userData = await response.json();
-        setUser(prev => prev ? { ...prev, isPremium: userData.isPremium } : null);
-      }
-    } catch (error) {
-      console.error('Error refreshing user:', error);
-    }
   };
 
   const loginWithGoogle = async (googleToken: string) => {
@@ -165,6 +171,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
       setToken(data.token);
       localStorage.setItem('authToken', data.token);
       setUser(data.user);
+      localStorage.setItem('authUser', JSON.stringify(data.user));
       
       return {};
     } catch (error) {
@@ -196,6 +203,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
       setToken(result.token);
       localStorage.setItem('authToken', result.token);
       setUser(result.user);
+      localStorage.setItem('authUser', JSON.stringify(result.user));
       
     } catch (error) {
       console.error('Complete Google auth error:', error);

@@ -3,27 +3,37 @@ import { useLocation } from "wouter";
 import { Code, LogIn, LogOut, Menu, X, Trophy, Crown, CreditCard, User } from "lucide-react";
 import { useQuiz } from "../../hooks/use-quiz";
 import { useAuth } from "../../contexts/auth-context";
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { AuthModal } from "../auth/auth-modal";
 
 const UserAvatar = ({ user }: { user: any }) => {
   const [imageError, setImageError] = useState(false);
+  const [imageLoading, setImageLoading] = useState(true);
   
-  if (!user.avatar || imageError) {
+  useEffect(() => {
+    setImageError(false);
+    setImageLoading(true);
+  }, [user?.avatar]);
+  
+  if (!user?.avatar || imageError) {
     return (
-      <div className="w-8 h-8 rounded-full bg-gray-100 border border-gray-200 flex items-center justify-center">
+      <div className="w-8 h-8 bg-gray-100 border border-gray-200 flex items-center justify-center">
         <User className="w-4 h-4 text-gray-400" />
       </div>
     );
   }
   
   return (
-    <img
-      src={user.avatar}
-      alt={user.displayName || user.username || 'Usuário'}
-      className="w-8 h-8 rounded-full object-cover border border-gray-200"
-      onError={() => setImageError(true)}
-    />
+      <img
+        src={user.avatar}
+        alt={user.displayName || user.username || 'Usuário'}
+        className={`w-8 h-8 rounded-full object-cover border border-gray-200 transition-opacity duration-200 ${imageLoading ? 'opacity-0' : 'opacity-100'}`}
+        onLoad={() => setImageLoading(false)}
+        onError={() => {
+          setImageError(true);
+          setImageLoading(false);
+        }}
+      />
   );
 };
 
