@@ -569,8 +569,7 @@ export default function AdminPage() {
                           </CardTitle>
                           <div className="flex items-center gap-2 mb-2">
                             <Badge className={getDifficultyColor(question.difficulty)}>
-                              {question.difficulty?.name === 'Iniciante' ? 'Fácil' : 
-                               question.difficulty?.name === 'Intermediário' ? 'Médio' : 'Difícil'}
+                              {question.difficulty?.name || 'Sem dificuldade'}
                             </Badge>
                             <Badge variant="outline">
                               {question.category?.name || 'Sem categoria'}
