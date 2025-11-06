@@ -1,6 +1,7 @@
 import React, { createContext, useContext, useState, useEffect } from 'react';
 import { useLocation } from 'wouter';
 import { API_BASE_URL } from '../../../config.json';
+import { useAuthNotifications } from '../hooks/use-auth-notifications';
 
 interface User {
   id: string;
@@ -35,6 +36,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
   const [token, setToken] = useState<string | null>(null);
   const [isLoading, setIsLoading] = useState(true);
   const [, setLocation] = useLocation();
+  const { showLoginSuccess, showLogoutSuccess, showGoogleLoginSuccess } = useAuthNotifications();
 
   const isAuthenticated = !!token && !!user;
   const isAdmin = user?.role === 'admin';
@@ -124,6 +126,8 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
         };
         setUser(userData);
         localStorage.setItem('authUser', JSON.stringify(userData));
+        
+        showLoginSuccess(userData.username);
       }
     } catch (error) {
       console.error('Login error:', error);
@@ -138,7 +142,10 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     setToken(null);
     localStorage.removeItem('authToken');
     localStorage.removeItem('authUser');
-    setLocation('/')
+    
+    showLogoutSuccess();
+    
+    setLocation('/');
   };
 
   const loginWithGoogle = async (googleToken: string) => {
@@ -173,6 +180,8 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
       setUser(data.user);
       localStorage.setItem('authUser', JSON.stringify(data.user));
       
+      showGoogleLoginSuccess(data.user.username);
+      
       return {};
     } catch (error) {
       console.error('Google login error:', error);
@@ -204,6 +213,8 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
       localStorage.setItem('authToken', result.token);
       setUser(result.user);
       localStorage.setItem('authUser', JSON.stringify(result.user));
+      
+      showGoogleLoginSuccess(result.user.username);
       
     } catch (error) {
       console.error('Complete Google auth error:', error);

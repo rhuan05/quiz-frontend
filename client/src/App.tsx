@@ -6,6 +6,7 @@ import { Toaster } from "./components/ui/toaster";
 import { TooltipProvider } from "./components/ui/tooltip";
 import { QuizProvider } from "./contexts/quiz-context";
 import { AuthProvider } from "./contexts/auth-context";
+import { useAutoLogout } from "./hooks/use-auto-logout";
 import NotFound from "./pages/not-found";
 import Home from "./pages/home";
 import Register from "./pages/register";
@@ -35,6 +36,18 @@ function Router() {
   );
 }
 
+function AppContent() {
+  useAutoLogout();
+  
+  return (
+    <div className="min-h-screen bg-gray-50">
+      <Header />
+      <Toaster />
+      <Router />
+    </div>
+  );
+}
+
 function App() {
   // Configuração do Google OAuth - verificar se a variável existe
   const googleClientId = (import.meta as any).env.VITE_GOOGLE_CLIENT_ID;
@@ -49,11 +62,7 @@ function App() {
         <TooltipProvider>
           <AuthProvider>
             <QuizProvider>
-              <div className="min-h-screen bg-gray-50">
-                <Header />
-                <Toaster />
-                <Router />
-              </div>
+              <AppContent />
             </QuizProvider>
           </AuthProvider>
         </TooltipProvider>

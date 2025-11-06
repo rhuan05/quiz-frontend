@@ -1,8 +1,15 @@
 import { QueryClient, QueryFunction } from "@tanstack/react-query";
 import { API_BASE_URL } from '../../../config.json';
+import { triggerAutoLogout } from '../hooks/use-auto-logout';
 
 async function throwIfResNotOk(res: Response) {
   if (!res.ok) {
+    if (res.status === 401 || res.status === 403) {
+      triggerAutoLogout();
+      const error = (await res.json()) || res.statusText;
+      throw new Error(error.message || 'Token Inválido ou Expirado');
+    }
+    
     const error = (await res.json()) || res.statusText;
     throw new Error(error.message || `Erro ${res.status}: ${res.statusText}`);
   }
@@ -54,6 +61,11 @@ export const getQueryFn: <T>(options: {
 
     if (unauthorizedBehavior === "returnNull" && res.status === 401) {
       return null;
+    }
+
+    if (res.status === 401 || res.status === 403) {
+      console.log('🔐 Token inválido ou expirado (401) na query - disparando logout automático');
+      triggerAutoLogout();
     }
 
     await throwIfResNotOk(res);
