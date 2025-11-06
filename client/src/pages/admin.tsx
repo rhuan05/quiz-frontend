@@ -143,9 +143,9 @@ export default function AdminPage() {
         setDifficulties(difficultiesData);
       } else {
         setDifficulties([
-          { id: '1', name: 'Iniciante', description: 'Nível básico' },
-          { id: '2', name: 'Intermediário', description: 'Nível médio' },
-          { id: '3', name: 'Avançado', description: 'Nível alto' }
+          { id: '379740f7-49ed-46e4-85e8-b655fce8fc7d', name: 'Fácil', description: 'Nível básico' },
+          { id: 'e15122fe-0d1b-485d-94ea-c95bc479ad30', name: 'Médio', description: 'Nível intermediário' },
+          { id: '38ae9e44-2beb-4ef9-b160-cf5e2c5cf3bd', name: 'Difícil', description: 'Nível avançado' }
         ]);
       }
     } catch (error) {
@@ -154,9 +154,9 @@ export default function AdminPage() {
         message: 'Erro de conexão com o servidor'
       });
       setDifficulties([
-        { id: '1', name: 'Iniciante', description: 'Nível básico' },
-        { id: '2', name: 'Intermediário', description: 'Nível médio' },
-        { id: '3', name: 'Avançado', description: 'Nível alto' }
+        { id: '379740f7-49ed-46e4-85e8-b655fce8fc7d', name: 'Fácil', description: 'Nível básico' },
+        { id: 'e15122fe-0d1b-485d-94ea-c95bc479ad30', name: 'Médio', description: 'Nível intermediário' },
+        { id: '38ae9e44-2beb-4ef9-b160-cf5e2c5cf3bd', name: 'Difícil', description: 'Nível avançado' }
       ]);
     } finally {
       setIsLoading(false);
@@ -302,8 +302,8 @@ export default function AdminPage() {
     const newFormData = {
       question: question.question,
       explanation: question.explanation,
-      difficulty: question.difficulty?.name || '',
-      category: question.category?.name || '',
+      difficulty: question.difficulty?.id || '',
+      category: question.category?.id || '',
       options: question.options.map(opt => ({
         text: opt.text,
         isCorrect: opt.isCorrect
@@ -349,9 +349,9 @@ export default function AdminPage() {
   const getDifficultyColor = (difficulty: Difficulty | string) => {
     const difficultyName = typeof difficulty === 'string' ? difficulty : difficulty?.name;
     switch (difficultyName) {
-      case 'Iniciante': return 'bg-green-100 text-green-800';
-      case 'Intermediário': return 'bg-yellow-100 text-yellow-800';
-      case 'Avançado': return 'bg-red-100 text-red-800';
+      case 'Fácil': return 'bg-green-100 text-green-800';
+      case 'Médio': return 'bg-yellow-100 text-yellow-800';
+      case 'Difícil': return 'bg-red-100 text-red-800';
       default: return 'bg-gray-100 text-gray-800';
     }
   };
@@ -448,7 +448,7 @@ export default function AdminPage() {
                       </SelectTrigger>
                       <SelectContent>
                         {categories.map((category) => (
-                          <SelectItem key={category.id} value={category.name}>
+                          <SelectItem key={category.id} value={category.id}>
                             {category.name}
                           </SelectItem>
                         ))}
@@ -472,7 +472,7 @@ export default function AdminPage() {
                       </SelectTrigger>
                       <SelectContent>
                         {difficulties.map((difficulty) => (
-                          <SelectItem key={difficulty.id} value={difficulty.name}>
+                          <SelectItem key={difficulty.id} value={difficulty.id}>
                             {difficulty.name}
                           </SelectItem>
                         ))}

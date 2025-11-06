@@ -6,12 +6,32 @@ export function useQuiz() {
   const { state, dispatch } = useQuizContext();
 
   const startQuizMutation = useMutation({
-    mutationFn: async (category?: string) => {
+    mutationFn: async ({ category, categoryId, difficultyId }: { 
+      category?: string; 
+      categoryId?: string; 
+      difficultyId?: string; 
+    }) => {
+      let requestBody;
+      
+      if (categoryId && difficultyId) {
+        requestBody = {
+          categoryId,
+          difficultyId
+        };
+      } else if (categoryId) {
+        requestBody = {
+          categoryId
+        };
+      } else {
+        requestBody = {
+          category: category || 'JavaScript'
+        };
+      }
+
       // Start session with category
-      const sessionResponse = await apiRequest("POST", "/api/quiz/start", {
-        category: category || 'JavaScript'
-      });
+      const sessionResponse = await apiRequest("POST", "/api/quiz/start", requestBody);
       const sessionData = await sessionResponse.json();
+      
       
       return { 
         sessionToken: sessionData.sessionToken, 
@@ -19,12 +39,26 @@ export function useQuiz() {
       };
     },
     onSuccess: (data) => {
+      if (!data.questions || data.questions.length === 0) {
+        dispatch({
+          type: 'SET_ERROR',
+          payload: 'Não temos perguntas para a categoria/dificuldade selecionada'
+        });
+        return;
+      }
+      
       dispatch({ 
         type: 'START_QUIZ', 
         payload: { 
           sessionToken: data.sessionToken, 
           questions: data.questions 
         } 
+      });
+    },
+    onError: (error) => {
+      dispatch({
+        type: 'SET_ERROR',
+        payload: error instanceof Error ? error.message : 'Erro ao iniciar quiz'
       });
     },
   });
@@ -67,10 +101,40 @@ export function useQuiz() {
     },
   });
 
-  const startQuiz = async (category?: string) => {
+  const startQuiz = async (categoryOrId?: string, difficultyId?: string) => {
     dispatch({ type: 'SET_LOADING', payload: true });
-    const result = await startQuizMutation.mutateAsync(category);
-    return result.sessionToken;
+    
+    let params;
+    
+    if (difficultyId) {
+      params = {
+        categoryId: categoryOrId,
+        difficultyId: difficultyId
+      };
+    } else if (categoryOrId) {
+      const isUUID = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i.test(categoryOrId);
+      
+      if (isUUID) {
+        params = { categoryId: categoryOrId };
+      } else {
+        params = { category: categoryOrId };
+      }
+    } else {
+      params = { category: 'JavaScript' };
+    }
+        
+    try {
+      const result = await startQuizMutation.mutateAsync(params);
+      
+      if (state.error) {
+        throw new Error(state.error);
+      }
+      
+      return result.sessionToken;
+    } catch (error) {
+      console.error('❌ Erro ao iniciar quiz:', error);
+      throw error;
+    }
   };
 
   const submitAnswer = async (questionId: string, optionId: string, timeSpent: number) => {
