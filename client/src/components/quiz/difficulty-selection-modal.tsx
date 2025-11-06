@@ -151,7 +151,7 @@ export function DifficultySelectionModal({
                       <div className="font-semibold text-gray-900 flex items-center gap-2">
                         {difficulty.label}
                         <Badge variant="outline" className="text-xs">
-                          {difficulty.points} pts
+                          1 pts
                         </Badge>
                       </div>
                       <div className="text-sm text-gray-600">
