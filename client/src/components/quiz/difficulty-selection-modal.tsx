@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from '../ui/dialog';
 import { Button } from '../ui/button';
 import { Card, CardContent } from '../ui/card';
@@ -49,6 +49,12 @@ export function DifficultySelectionModal({
   error = null
 }: DifficultySelectionModalProps) {
   const [selectedDifficulty, setSelectedDifficulty] = useState<string>('');
+
+  useEffect(() => {
+    if (isOpen && !error) {
+      setSelectedDifficulty('');
+    }
+  }, [isOpen]);
 
   const getDifficultyIcon = (difficultyName: string) => {
     switch (difficultyName.toLowerCase()) {

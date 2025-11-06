@@ -35,8 +35,8 @@ interface Difficulty {
 }
 
 export default function Home() {
-  const { startQuiz, isLoading } = useQuiz();
-  const { state: quizState, dispatch: quizDispatch } = useQuizContext();
+  const { startQuiz, isLoading, clearError } = useQuiz();
+  const { state: quizState } = useQuizContext();
   const [categories, setCategories] = useState<Category[]>([]);
   const [difficulties, setDifficulties] = useState<Difficulty[]>([]);
   const [showAuthModal, setShowAuthModal] = useState(false);
@@ -127,8 +127,6 @@ export default function Home() {
 
   const handleStartQuizWithDifficulty = async (categoryId: string, difficultyId: string) => {
     try {      
-      quizDispatch({ type: 'SET_ERROR', payload: null });
-      
       const sessionToken = await startQuiz(categoryId, difficultyId);
             
       if (sessionToken) {
@@ -441,7 +439,7 @@ export default function Home() {
         onClose={() => {
           setShowDifficultyModal(false);
           setSelectedCategory(null);
-          quizDispatch({ type: 'SET_ERROR', payload: null });
+          clearError();
         }}
         category={selectedCategory}
         difficulties={difficulties}

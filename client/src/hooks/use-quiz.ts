@@ -39,14 +39,6 @@ export function useQuiz() {
       };
     },
     onSuccess: (data) => {
-      if (!data.questions || data.questions.length === 0) {
-        dispatch({
-          type: 'SET_ERROR',
-          payload: 'Não temos perguntas para a categoria/dificuldade selecionada'
-        });
-        return;
-      }
-      
       dispatch({ 
         type: 'START_QUIZ', 
         payload: { 
@@ -126,8 +118,13 @@ export function useQuiz() {
     try {
       const result = await startQuizMutation.mutateAsync(params);
       
-      if (state.error) {
-        throw new Error(state.error);
+      if (!result.questions || result.questions.length === 0) {
+        const errorMessage = 'Não temos perguntas para a categoria/dificuldade selecionada';
+        dispatch({
+          type: 'SET_ERROR',
+          payload: errorMessage
+        });
+        throw new Error(errorMessage);
       }
       
       return result.sessionToken;
@@ -157,6 +154,10 @@ export function useQuiz() {
     dispatch({ type: 'RESET_QUIZ' });
   };
 
+  const clearError = () => {
+    dispatch({ type: 'SET_ERROR', payload: null });
+  };
+
   return {
     ...state,
     startQuiz,
@@ -165,6 +166,7 @@ export function useQuiz() {
     nextQuestion,
     setShowFeedback,
     resetQuiz,
+    clearError,
     isLoading: state.isLoading || startQuizMutation.isPending,
   };
 }
