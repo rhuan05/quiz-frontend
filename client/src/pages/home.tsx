@@ -114,8 +114,6 @@ export default function Home() {
   };
 
   const handleCategorySelect = (category: Category) => {
-    console.log('Categoria selecionada:', category);
-    
     const token = localStorage.getItem("authToken");
     
     if (!token) {
