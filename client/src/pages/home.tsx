@@ -103,7 +103,14 @@ export default function Home() {
 
   const formatDate = (date: string | Date | null) => {
     if (!date) return '';
-    return new Date(date).toLocaleDateString('pt-BR');
+    const utcDate = new Date(date);
+  
+    return new Intl.DateTimeFormat('pt-BR', {
+      timeZone: 'UTC',
+      day: '2-digit',
+      month: '2-digit',
+      year: 'numeric'
+    }).format(utcDate);
   };
 
   const handleCategorySelect = (category: Category) => {

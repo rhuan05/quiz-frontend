@@ -236,7 +236,14 @@ export default function AdminPage() {
 
   const formatDate = (date: string | Date | null) => {
     if (!date) return 'Sem data definida';
-    return new Date(date).toLocaleDateString('pt-BR');
+    const utcDate = new Date(date);
+  
+    return new Intl.DateTimeFormat('pt-BR', {
+      timeZone: 'UTC',
+      day: '2-digit',
+      month: '2-digit',
+      year: 'numeric'
+    }).format(utcDate);
   };
 
   const handleSubmit = async (e: React.FormEvent) => {
