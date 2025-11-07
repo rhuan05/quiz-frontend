@@ -24,6 +24,7 @@ interface AuthModalProps {
 export function AuthModal({ isOpen, onClose }: AuthModalProps) {
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
+  const [confirmPassword, setConfirmPassword] = useState('');
   const [username, setUsername] = useState('');
   const [showPassword, setShowPassword] = useState(false);
 
@@ -36,7 +37,7 @@ export function AuthModal({ isOpen, onClose }: AuthModalProps) {
     setUsername(formattedValue);
   };
   const [isLogin, setIsLogin] = useState(true);
-  const [formErrors, setFormErrors] = useState<{username?: string, email?: string; password?: string}>({});
+  const [formErrors, setFormErrors] = useState<{username?: string, email?: string; password?: string; confirmPassword?: string}>({});
   const { login } = useAuth();
   const [message, setMessage] = useState<string | null>(null);
   const [isSuccess, setIsSuccess] = useState(false);
@@ -46,6 +47,7 @@ export function AuthModal({ isOpen, onClose }: AuthModalProps) {
 
   const [showCompleteProfile, setShowCompleteProfile] = useState(false);
   const [showEmailVerification, setShowEmailVerification] = useState(false);
+  const [userRegistrationData, setUserRegistrationData] = useState<any>(null);
   const [oauthData, setOauthData] = useState<{
     email: string;
     needsPhone?: boolean;
@@ -56,7 +58,7 @@ export function AuthModal({ isOpen, onClose }: AuthModalProps) {
   const loading = isLoading;
 
   const validateForm = () => {
-    const newErrors: {username?: string, email?: string; password?: string} = {};
+    const newErrors: {username?: string, email?: string; password?: string; confirmPassword?: string} = {};
 
     if (!email.trim()) {
       newErrors.email = 'Email é obrigatório';
@@ -68,6 +70,14 @@ export function AuthModal({ isOpen, onClose }: AuthModalProps) {
       newErrors.password = 'Senha é obrigatória';
     } else if (password.length < 6) {
       newErrors.password = 'Senha deve ter pelo menos 6 caracteres';
+    }
+
+    if (!isLogin) {
+      if (!confirmPassword.trim()) {
+        newErrors.confirmPassword = 'Confirme sua senha';
+      } else if (password !== confirmPassword) {
+        newErrors.confirmPassword = 'As senhas não coincidem';
+      }
     }
 
     setFormErrors(newErrors);
@@ -123,6 +133,12 @@ export function AuthModal({ isOpen, onClose }: AuthModalProps) {
             setIsSuccess(true);
             
             if (result.requiresEmailVerification) {
+              // Guardar dados do usuário para reenvio de código
+              setUserRegistrationData({
+                username: data.username,
+                email: data.email,
+                passwordHash: result.passwordHash
+              });
               setRequiresEmailVerification(true);
               setShowEmailVerification(true);
             } else {
@@ -289,6 +305,26 @@ export function AuthModal({ isOpen, onClose }: AuthModalProps) {
               <p className="text-sm text-red-600">{formErrors.password}</p>
             )}
           </div>
+
+          {/* Campo Confirmar Senha */}
+          {!isLogin && (
+            <div className="space-y-2">
+              <Label htmlFor="confirmPassword">Confirmar Senha</Label>
+              <Input
+                id="confirmPassword"
+                name="confirmPassword"
+                type={showPassword ? "text" : "password"}
+                placeholder="Repita sua senha"
+                value={confirmPassword}
+                onChange={(e) => setConfirmPassword(e.target.value)}
+                disabled={loading}
+                className={formErrors.confirmPassword ? 'border-red-500 focus:border-red-500' : ''}
+              />
+              {formErrors.confirmPassword && (
+                <p className="text-sm text-red-600">{formErrors.confirmPassword}</p>
+              )}
+            </div>
+          )}
           
           {isLogin ? (
             <div className="text-sm text-gray-600 space-y-1">
@@ -371,6 +407,7 @@ export function AuthModal({ isOpen, onClose }: AuthModalProps) {
         }}
         onVerified={handleEmailVerified}
         email={email}
+        userData={userRegistrationData}
       />
     </Dialog>
   );

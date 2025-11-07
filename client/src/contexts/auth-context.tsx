@@ -21,7 +21,7 @@ interface AuthContextType {
   login: (email: string, password: string) => Promise<void>;
   loginWithGoogle: (googleToken: string) => Promise<{ requiresAdditionalInfo?: boolean; needsPhone?: boolean; needsUsername?: boolean; email?: string }>;
   completeGoogleAuth: (data: { email: string; phone?: string; username?: string }) => Promise<void>;
-  sendVerificationEmail: (email: string) => Promise<void>;
+  sendVerificationEmailWithUserData: (email: string, userData: any) => Promise<void>;
   verifyEmail: (email: string, code: string) => Promise<void>;
   logout: () => void;
   isLoading: boolean;
@@ -224,14 +224,14 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     }
   };
 
-  const sendVerificationEmail = async (email: string) => {
+  const sendVerificationEmailWithUserData = async (email: string, userData: any) => {
     try {
       const response = await fetch(`${API_BASE_URL}/api/auth/send-verification`, {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
         },
-        body: JSON.stringify({ email }),
+        body: JSON.stringify({ email, userData }),
       });
 
       if (!response.ok) {
@@ -239,7 +239,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
         throw new Error(error.message || 'Erro ao enviar email de verificação');
       }
     } catch (error) {
-      console.error('Send verification email error:', error);
+      console.error('Send verification email with user data error:', error);
       throw error;
     }
   };
@@ -276,7 +276,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
         login,
         loginWithGoogle,
         completeGoogleAuth,
-        sendVerificationEmail,
+        sendVerificationEmailWithUserData,
         verifyEmail,
         logout,
         isLoading,

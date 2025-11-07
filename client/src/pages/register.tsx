@@ -6,7 +6,7 @@ import { Input } from "../components/ui/input";
 import { Label } from "../components/ui/label";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "../components/ui/card";
 import { Alert, AlertDescription } from "../components/ui/alert";
-import { Loader2 } from "lucide-react";
+import { Loader2, Eye, EyeOff } from "lucide-react";
 import { GoogleLoginButton } from "../components/auth/google-login-button";
 import { CompleteProfileModal } from "../components/auth/complete-profile-modal";
 import { EmailVerificationModal } from "../components/auth/email-verification-modal";
@@ -17,6 +17,11 @@ export default function RegisterContent() {
     const [isSuccess, setIsSuccess] = useState(false);
     const [, setLocation] = useLocation();
     const [username, setUsername] = useState('');
+    const [password, setPassword] = useState('');
+    const [confirmPassword, setConfirmPassword] = useState('');
+    const [showPassword, setShowPassword] = useState(false);
+    const [showConfirmPassword, setShowConfirmPassword] = useState(false);
+    const [passwordError, setPasswordError] = useState('');
     
     const handleUsernameChange = (e: React.ChangeEvent<HTMLInputElement>) => {
         const value = e.target.value;
@@ -26,9 +31,60 @@ export default function RegisterContent() {
             .toLowerCase();
         setUsername(formattedValue);
     };
+
+    const handlePasswordChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+        const value = e.target.value;
+        setPassword(value);
+        
+        if (passwordError) {
+            setPasswordError('');
+        }
+        
+        if (confirmPassword && value !== confirmPassword) {
+            setPasswordError('As senhas não coincidem');
+        } else if (confirmPassword && value === confirmPassword) {
+            setPasswordError('');
+        }
+    };
+
+    const handleConfirmPasswordChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+        const value = e.target.value;
+        setConfirmPassword(value);
+        
+        if (password && value !== password) {
+            setPasswordError('As senhas não coincidem');
+        } else if (password && value === password) {
+            setPasswordError('');
+        }
+    };
+
+    const validatePasswords = () => {
+        if (!password) {
+            setPasswordError('A senha é obrigatória');
+            return false;
+        }
+        
+        if (password.length < 6) {
+            setPasswordError('A senha deve ter pelo menos 6 caracteres');
+            return false;
+        }
+        
+        if (!confirmPassword) {
+            setPasswordError('Confirme sua senha');
+            return false;
+        }
+        
+        if (password !== confirmPassword) {
+            setPasswordError('As senhas não coincidem');
+            return false;
+        }
+        
+        return true;
+    };
     
     const [showCompleteProfile, setShowCompleteProfile] = useState(false);
     const [showEmailVerification, setShowEmailVerification] = useState(false);
+    const [userRegistrationData, setUserRegistrationData] = useState<any>(null);
     const [oauthData, setOauthData] = useState<{
         email: string;
         needsPhone?: boolean;
@@ -39,6 +95,11 @@ export default function RegisterContent() {
         e.preventDefault();
         setIsLoading(true);
         setMessage(null);
+
+        if (!validatePasswords()) {
+            setIsLoading(false);
+            return;
+        }
 
         const formData = new FormData(e.currentTarget as HTMLFormElement);
         const data = Object.fromEntries(formData.entries());
@@ -55,6 +116,11 @@ export default function RegisterContent() {
                 setIsSuccess(true);
                 
                 if (result.requiresEmailVerification) {
+                    setUserRegistrationData({
+                        username: data.username,
+                        email: data.email,
+                        passwordHash: result.passwordHash
+                    });
                     setOauthData({ email: data.email as string });
                     setShowEmailVerification(true);
                 } else {
@@ -121,6 +187,12 @@ export default function RegisterContent() {
                                 </Alert>
                             )}
 
+                            {passwordError && (
+                                <Alert variant="destructive">
+                                    <AlertDescription>{passwordError}</AlertDescription>
+                                </Alert>
+                            )}
+
                             <div className="space-y-2">
                                 <Label htmlFor="username">Nome de usuário</Label>
                                 <Input
@@ -153,20 +225,87 @@ export default function RegisterContent() {
 
                             <div className="space-y-2">
                                 <Label htmlFor="password">Senha</Label>
-                                <Input
-                                    type="password"
-                                    name="password"
-                                    id="password"
-                                    placeholder="Digite sua senha"
-                                    disabled={isLoading}
-                                    required
-                                />
+                                <div className="relative">
+                                    <Input
+                                        type={showPassword ? "text" : "password"}
+                                        name="password"
+                                        id="password"
+                                        value={password}
+                                        onChange={handlePasswordChange}
+                                        placeholder="Digite sua senha"
+                                        disabled={isLoading}
+                                        required
+                                        className="pr-10"
+                                    />
+                                    <button
+                                        type="button"
+                                        className="absolute inset-y-0 right-0 pr-3 flex items-center"
+                                        onClick={() => setShowPassword(!showPassword)}
+                                        disabled={isLoading}
+                                    >
+                                        {showPassword ? (
+                                            <EyeOff className="h-4 w-4 text-gray-400" />
+                                        ) : (
+                                            <Eye className="h-4 w-4 text-gray-400" />
+                                        )}
+                                    </button>
+                                </div>
+                                <p className="text-xs text-gray-500">
+                                    Mínimo de 6 caracteres
+                                </p>
+                            </div>
+
+                            <div className="space-y-2">
+                                <Label htmlFor="confirmPassword">Confirmar Senha</Label>
+                                <div className="relative">
+                                    <Input
+                                        type={showConfirmPassword ? "text" : "password"}
+                                        name="confirmPassword"
+                                        id="confirmPassword"
+                                        value={confirmPassword}
+                                        onChange={handleConfirmPasswordChange}
+                                        placeholder="Confirme sua senha"
+                                        disabled={isLoading}
+                                        required
+                                        className={`pr-10 ${
+                                            confirmPassword 
+                                                ? password === confirmPassword 
+                                                    ? 'border-green-500 focus:border-green-500' 
+                                                    : 'border-red-500 focus:border-red-500'
+                                                : ''
+                                        }`}
+                                    />
+                                    <button
+                                        type="button"
+                                        className="absolute inset-y-0 right-0 pr-3 flex items-center"
+                                        onClick={() => setShowConfirmPassword(!showConfirmPassword)}
+                                        disabled={isLoading}
+                                    >
+                                        {showConfirmPassword ? (
+                                            <EyeOff className="h-4 w-4 text-gray-400" />
+                                        ) : (
+                                            <Eye className="h-4 w-4 text-gray-400" />
+                                        )}
+                                    </button>
+                                </div>
+                                {confirmPassword && (
+                                    <p className={`text-xs ${
+                                        password === confirmPassword 
+                                            ? 'text-green-600' 
+                                            : 'text-red-600'
+                                    }`}>
+                                        {password === confirmPassword 
+                                            ? '✓ As senhas coincidem' 
+                                            : '✗ As senhas não coincidem'
+                                        }
+                                    </p>
+                                )}
                             </div>
 
                             <Button 
                                 type="submit" 
                                 className="w-full" 
-                                disabled={isLoading}
+                                disabled={isLoading || !!passwordError || !password || !confirmPassword}
                             >
                                 {isLoading ? (
                                     <>
@@ -229,6 +368,7 @@ export default function RegisterContent() {
                         onClose={() => setShowEmailVerification(false)}
                         onVerified={handleEmailVerified}
                         email={oauthData.email}
+                        userData={userRegistrationData}
                     />
                 )}
             </div>

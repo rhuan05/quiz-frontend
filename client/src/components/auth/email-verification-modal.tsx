@@ -10,13 +10,15 @@ interface EmailVerificationModalProps {
   onClose: () => void;
   onVerified: () => void;
   email: string;
+  userData?: any;
 }
 
 export function EmailVerificationModal({ 
   isOpen, 
   onClose, 
   onVerified, 
-  email 
+  email,
+  userData 
 }: EmailVerificationModalProps) {
   const [code, setCode] = useState(['', '', '', '', '', '']);
   const [isLoading, setIsLoading] = useState(false);
@@ -24,7 +26,7 @@ export function EmailVerificationModal({
   const [error, setError] = useState<string | null>(null);
   const [success, setSuccess] = useState<string | null>(null);
   const [countdown, setCountdown] = useState(0);
-  const { verifyEmail, sendVerificationEmail } = useAuth();
+  const { verifyEmail, sendVerificationEmailWithUserData } = useAuth();
   
   const inputRefs = useRef<(HTMLInputElement | null)[]>([]);
 
@@ -99,7 +101,13 @@ export function EmailVerificationModal({
     setSuccess(null);
     
     try {
-      await sendVerificationEmail(email);
+      if (userData) {
+        await sendVerificationEmailWithUserData(email, userData);
+      } else {
+        setError('Dados do usuário não encontrados. Faça o cadastro novamente.');
+        return;
+      }
+      
       setSuccess('Código reenviado com sucesso!');
       setCountdown(60);
       setCode(['', '', '', '', '', '']);
