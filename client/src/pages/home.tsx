@@ -3,13 +3,27 @@ import { Card, CardContent } from "../components/ui/card";
 import { Badge } from "../components/ui/badge";
 import LoadingOverlay from "../components/layout/loading-overlay";
 import { AuthModal } from "../components/auth/auth-modal";
-import { DifficultySelectionModal } from "../components/quiz/difficulty-selection-modal";
+import { CategoryTopicDifficultyModal } from "../components/quiz/category-topic-difficulty-modal";
 import { Rocket, Zap, TrendingUp, Smartphone, Code, Calendar, Lock, Check } from "lucide-react";
 import { useQuiz } from "../hooks/use-quiz";
 import { useQuizContext } from "../contexts/quiz-context";
 import { useState, useEffect } from 'react';
 import { useLocation } from 'wouter';
 import { API_BASE_URL } from '../../../config.json';
+
+interface Topic {
+  id: string;
+  name: string;
+  description: string | null;
+  slug: string;
+  icon: string | null;
+  color: string | null;
+  isActive: boolean;
+  order: number;
+  categoryId: string;
+  createdAt: string;
+  updatedAt: string;
+}
 
 interface Category {
   id: string;
@@ -23,6 +37,7 @@ interface Category {
   order: number;
   createdAt: string;
   updatedAt: string;
+  topics?: Topic[];
 }
 
 interface Difficulty {
@@ -35,12 +50,12 @@ interface Difficulty {
 }
 
 export default function Home() {
-  const { startQuiz, isLoading, clearError } = useQuiz();
+  const { startQuiz, startQuizWithSelection, isLoading, clearError } = useQuiz();
   const { state: quizState } = useQuizContext();
   const [categories, setCategories] = useState<Category[]>([]);
   const [difficulties, setDifficulties] = useState<Difficulty[]>([]);
   const [showAuthModal, setShowAuthModal] = useState(false);
-  const [showDifficultyModal, setShowDifficultyModal] = useState(false);
+  const [showCategoryModal, setShowCategoryModal] = useState(false);
   const [selectedCategory, setSelectedCategory] = useState<Category | null>(null);
   const [authError, setAuthError] = useState<string>('');
   const [, setLocation] = useLocation();
@@ -56,13 +71,20 @@ export default function Home() {
       setLoadingCategories(true);
       const response = await fetch(`${API_BASE_URL}/api/categories`);
       if (response.ok) {
-        const data = await response.json();
-        setCategories(data);
+        const result = await response.json();
+        
+        if (result.success && Array.isArray(result.data)) {
+          setCategories(result.data);
+        } else {
+          setCategories([]);
+        }
       } else {
         console.error('Erro ao buscar categorias:', response.status);
+        setCategories([]);
       }
     } catch (error) {
       console.error('Erro ao buscar categorias:', error);
+      setCategories([]);
     } finally {
       setLoadingCategories(false);
     }
@@ -122,18 +144,15 @@ export default function Home() {
     }
     
     setSelectedCategory(category);
-    setShowDifficultyModal(true);
+    setShowCategoryModal(true);
   };
 
-  const handleStartQuizWithDifficulty = async (categoryId: string, difficultyId: string) => {
+  const handleQuizSelection = async (categoryId: string, topicId: string, difficultyId: string) => {
     try {      
-      const sessionToken = await startQuiz(categoryId, difficultyId);
+      const result = await startQuizWithSelection(categoryId, topicId, difficultyId);
             
-      if (sessionToken) {
-        console.log('✅ Quiz iniciado com sucesso, redirecionando...');
-        
-        setShowDifficultyModal(false);
-        setSelectedCategory(null);
+      if (result) {        
+        setShowCategoryModal(false);
         
         setTimeout(() => {
           setLocation('/quiz');
@@ -248,6 +267,15 @@ export default function Home() {
               </Button>
               <Button
                 variant="outline"
+                onClick={() => {
+                  const token = localStorage.getItem("authToken");
+                  if (!token) {
+                    setShowAuthModal(true);
+                  } else {
+                    setSelectedCategory(null);
+                    setShowCategoryModal(true);
+                  }
+                }}
                 disabled={isLoading}
                 className="px-8 py-4 text-lg font-semibold border-2 hover:bg-gray-50 transition-all duration-300"
               >
@@ -433,19 +461,16 @@ export default function Home() {
         error={authError}
       />
 
-      {/* Difficulty Selection Modal */}
-      <DifficultySelectionModal
-        isOpen={showDifficultyModal}
+      {/* Category Topic Difficulty Selection Modal */}
+      <CategoryTopicDifficultyModal
+        isOpen={showCategoryModal}
         onClose={() => {
-          setShowDifficultyModal(false);
+          setShowCategoryModal(false);
           setSelectedCategory(null);
           clearError();
         }}
-        category={selectedCategory}
-        difficulties={difficulties}
-        onStartQuiz={handleStartQuizWithDifficulty}
-        loading={isLoading}
-        error={quizState.error}
+        onSelectionComplete={handleQuizSelection}
+        selectedCategory={selectedCategory}
       />
     </>
   );

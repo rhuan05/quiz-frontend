@@ -6,14 +6,21 @@ export function useQuiz() {
   const { state, dispatch } = useQuizContext();
 
   const startQuizMutation = useMutation({
-    mutationFn: async ({ category, categoryId, difficultyId }: { 
+    mutationFn: async ({ category, categoryId, topicId, difficultyId }: { 
       category?: string; 
       categoryId?: string; 
+      topicId?: string; 
       difficultyId?: string; 
     }) => {
       let requestBody;
       
-      if (categoryId && difficultyId) {
+      if (categoryId && topicId && difficultyId) {
+        requestBody = {
+          categoryId,
+          topicId,
+          difficultyId
+        };
+      } else if (categoryId && difficultyId) {
         requestBody = {
           categoryId,
           difficultyId
@@ -28,7 +35,6 @@ export function useQuiz() {
         };
       }
 
-      // Start session with category
       const sessionResponse = await apiRequest("POST", "/api/quiz/start", requestBody);
       const sessionData = await sessionResponse.json();
       
@@ -93,12 +99,19 @@ export function useQuiz() {
     },
   });
 
-  const startQuiz = async (categoryOrId?: string, difficultyId?: string) => {
+  const startQuiz = async (categoryOrId?: string, topicId?: string, difficultyId?: string) => {
     dispatch({ type: 'SET_LOADING', payload: true });
     
     let params;
     
-    if (difficultyId) {
+    if (categoryOrId && topicId && difficultyId) {
+      params = {
+        categoryId: categoryOrId,
+        topicId: topicId,
+        difficultyId: difficultyId
+      };
+    } 
+    else if (difficultyId) {
       params = {
         categoryId: categoryOrId,
         difficultyId: difficultyId
@@ -158,9 +171,42 @@ export function useQuiz() {
     dispatch({ type: 'SET_ERROR', payload: null });
   };
 
+  const startQuizWithSelection = async (categoryId: string, topicId: string, difficultyId: string) => {
+    dispatch({ type: 'SET_LOADING', payload: true });
+    
+    const params = {
+      categoryId,
+      topicId,
+      difficultyId
+    };
+        
+    try {
+      const result = await startQuizMutation.mutateAsync(params);
+      
+      if (!result.questions || result.questions.length === 0) {
+        const errorMessage = 'Não temos perguntas para a categoria/tópico/dificuldade selecionada';
+        dispatch({
+          type: 'SET_ERROR',
+          payload: errorMessage
+        });
+        throw new Error(errorMessage);
+      }
+      
+      return result;
+    } catch (error) {
+      const errorMessage = error instanceof Error ? error.message : 'Erro ao iniciar quiz';
+      dispatch({
+        type: 'SET_ERROR',
+        payload: errorMessage
+      });
+      throw error;
+    }
+  };
+
   return {
     ...state,
     startQuiz,
+    startQuizWithSelection,
     submitAnswer,
     completeQuiz,
     nextQuestion,

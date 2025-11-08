@@ -21,6 +21,8 @@ interface Question {
   explanation: string;
   difficulty: Difficulty;
   category: Category;
+  topicId?: string;
+  topic?: Topic;
   options: Option[];
   createdAt: string;
 }
@@ -45,6 +47,20 @@ interface Category {
   updatedAt: string;
 }
 
+interface Topic {
+  id: string;
+  name: string;
+  description: string | null;
+  slug: string;
+  icon: string | null;
+  color: string | null;
+  isActive: boolean;
+  order: number;
+  categoryId: string;
+  createdAt: string;
+  updatedAt: string;
+}
+
 interface CategoryFormData {
   name?: string;
   description?: string;
@@ -54,10 +70,25 @@ interface CategoryFormData {
   color?: string;
 }
 
+interface TopicFormData {
+  name?: string;
+  description?: string;
+  categoryId?: string;
+  slug?: string;
+  icon?: string;
+  color?: string;
+  order?: number;
+}
+
 interface Difficulty {
   id: string;
   name: string;
-  description?: string;
+  label: string;
+  points: number;
+  color?: string;
+  order: number;
+  createdAt?: string;
+  updatedAt?: string;
 }
 
 interface QuestionForm {
@@ -65,6 +96,7 @@ interface QuestionForm {
   explanation: string;
   difficulty: string;
   category: string;
+  topic: string;
   options: {
     text: string;
     isCorrect: boolean;
@@ -76,18 +108,25 @@ export default function AdminPage() {
   const [, setLocation] = useLocation();
   const [questions, setQuestions] = useState<Question[]>([]);
   const [categories, setCategories] = useState<Category[]>([]);
+  const [topics, setTopics] = useState<Topic[]>([]);
   const [difficulties, setDifficulties] = useState<Difficulty[]>([]);
   const [isLoading, setIsLoading] = useState(true);
   const [error, setError] = useState<{ status: number; message: string } | null>(null);
   const [isDialogOpen, setIsDialogOpen] = useState(false);
   const [editingQuestion, setEditingQuestion] = useState<Question | null>(null);
   const [editingCategory, setEditingCategory] = useState<string | null>(null);
+  const [editingTopic, setEditingTopic] = useState<string | null>(null);
   const [categoryFormData, setCategoryFormData] = useState<CategoryFormData>({});
+  const [topicFormData, setTopicFormData] = useState<TopicFormData>({});
+  const [isTopicDialogOpen, setIsTopicDialogOpen] = useState(false);
+  const [isCategoryDialogOpen, setIsCategoryDialogOpen] = useState(false);
+  const [availableTopics, setAvailableTopics] = useState<Topic[]>([]);
   const [formData, setFormData] = useState<QuestionForm>({
     question: '',
     explanation: '',
     difficulty: '',
     category: '',
+    topic: '',
     options: [
       { text: '', isCorrect: false },
       { text: '', isCorrect: false },
@@ -109,11 +148,14 @@ export default function AdminPage() {
       setIsLoading(true);
       setError(null);
       
-      const [questionsRes, categoriesRes, difficultiesRes] = await Promise.all([
+      const [questionsRes, categoriesRes, topicsRes, difficultiesRes] = await Promise.all([
         fetch(`${API_BASE_URL}/api/admin/questions`, {
           headers: { Authorization: `Bearer ${token}` }
         }),
         fetch(`${API_BASE_URL}/api/categories`, {
+          headers: { Authorization: `Bearer ${token}` }
+        }),
+        fetch(`${API_BASE_URL}/api/topics`, {
           headers: { Authorization: `Bearer ${token}` }
         }),
         fetch(`${API_BASE_URL}/api/difficulties`, {
@@ -135,17 +177,51 @@ export default function AdminPage() {
 
       if (categoriesRes.ok) {
         const categoriesData = await categoriesRes.json();
-        setCategories(categoriesData);
+        
+        if (categoriesData.success && Array.isArray(categoriesData.data)) {
+          setCategories(categoriesData.data);
+        } else if (Array.isArray(categoriesData)) {
+          setCategories(categoriesData);
+        } else {
+          setCategories([]);
+        }
+      } else {
+        setCategories([]);
+      }
+
+      if (topicsRes.ok) {
+        const topicsData = await topicsRes.json();
+        
+        if (topicsData.success && Array.isArray(topicsData.data)) {
+          setTopics(topicsData.data);
+        } else if (Array.isArray(topicsData)) {
+          setTopics(topicsData);
+        } else {
+          console.error('Formato de resposta inválido para tópicos:', topicsData);
+          setTopics([]);
+        }
+      } else {
+        setTopics([]);
       }
 
       if (difficultiesRes.ok) {
         const difficultiesData = await difficultiesRes.json();
-        setDifficulties(difficultiesData);
+        
+        if (Array.isArray(difficultiesData)) {
+          setDifficulties(difficultiesData);
+        } else {
+          console.error('Formato de resposta inválido para dificuldades:', difficultiesData);
+          setDifficulties([
+            { id: '379740f7-49ed-46e4-85e8-b655fce8fc7d', name: 'easy', label: 'Fácil', points: 10, color: '#22c55e', order: 1 },
+            { id: 'e15122fe-0d1b-485d-94ea-c95bc479ad30', name: 'medium', label: 'Médio', points: 20, color: '#f59e0b', order: 2 },
+            { id: '38ae9e44-2beb-4ef9-b160-cf5e2c5cf3bd', name: 'hard', label: 'Difícil', points: 30, color: '#ef4444', order: 3 }
+          ]);
+        }
       } else {
         setDifficulties([
-          { id: '379740f7-49ed-46e4-85e8-b655fce8fc7d', name: 'Fácil', description: 'Nível básico' },
-          { id: 'e15122fe-0d1b-485d-94ea-c95bc479ad30', name: 'Médio', description: 'Nível intermediário' },
-          { id: '38ae9e44-2beb-4ef9-b160-cf5e2c5cf3bd', name: 'Difícil', description: 'Nível avançado' }
+          { id: '379740f7-49ed-46e4-85e8-b655fce8fc7d', name: 'easy', label: 'Fácil', points: 10, color: '#22c55e', order: 1 },
+          { id: 'e15122fe-0d1b-485d-94ea-c95bc479ad30', name: 'medium', label: 'Médio', points: 20, color: '#f59e0b', order: 2 },
+          { id: '38ae9e44-2beb-4ef9-b160-cf5e2c5cf3bd', name: 'hard', label: 'Difícil', points: 30, color: '#ef4444', order: 3 }
         ]);
       }
     } catch (error) {
@@ -154,12 +230,40 @@ export default function AdminPage() {
         message: 'Erro de conexão com o servidor'
       });
       setDifficulties([
-        { id: '379740f7-49ed-46e4-85e8-b655fce8fc7d', name: 'Fácil', description: 'Nível básico' },
-        { id: 'e15122fe-0d1b-485d-94ea-c95bc479ad30', name: 'Médio', description: 'Nível intermediário' },
-        { id: '38ae9e44-2beb-4ef9-b160-cf5e2c5cf3bd', name: 'Difícil', description: 'Nível avançado' }
+        { id: '379740f7-49ed-46e4-85e8-b655fce8fc7d', name: 'easy', label: 'Fácil', points: 10, color: '#22c55e', order: 1 },
+        { id: 'e15122fe-0d1b-485d-94ea-c95bc479ad30', name: 'medium', label: 'Médio', points: 20, color: '#f59e0b', order: 2 },
+        { id: '38ae9e44-2beb-4ef9-b160-cf5e2c5cf3bd', name: 'hard', label: 'Difícil', points: 30, color: '#ef4444', order: 3 }
       ]);
     } finally {
       setIsLoading(false);
+    }
+  };
+
+  const fetchTopicsByCategory = async (categoryId: string) => {
+    try {
+      const response = await fetch(`${API_BASE_URL}/api/categories/${categoryId}/topics`);
+      if (response.ok) {
+        const result = await response.json();
+        if (result.success && Array.isArray(result.data)) {
+          setAvailableTopics(result.data);
+        } else {
+          setAvailableTopics([]);
+        }
+      } else {
+        setAvailableTopics([]);
+      }
+    } catch (error) {
+      console.error('Erro ao buscar tópicos:', error);
+      setAvailableTopics([]);
+    }
+  };
+
+  const handleCategoryChange = (categoryId: string) => {
+    setFormData({ ...formData, category: categoryId, topic: '' });
+    if (categoryId) {
+      fetchTopicsByCategory(categoryId);
+    } else {
+      setAvailableTopics([]);
     }
   };
 
@@ -169,6 +273,7 @@ export default function AdminPage() {
       explanation: '',
       difficulty: '',
       category: '',
+      topic: '',
       options: [
         { text: '', isCorrect: false },
         { text: '', isCorrect: false },
@@ -224,33 +329,221 @@ export default function AdminPage() {
     }
   };
 
+  const handleCreateTopic = async () => {
+    try {
+      if (!topicFormData.name || !topicFormData.categoryId) {
+        alert('Nome e categoria são obrigatórios');
+        return;
+      }
+
+      const response = await fetch(`${API_BASE_URL}/api/admin/topics`, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          'Authorization': `Bearer ${token}`
+        },
+        body: JSON.stringify({
+          ...topicFormData,
+          slug: topicFormData.slug || topicFormData.name?.toLowerCase().replace(/\s+/g, '-'),
+          order: topicFormData.order || topics.length + 1,
+          isActive: true
+        })
+      });
+
+      if (response.ok) {
+        setIsTopicDialogOpen(false);
+        setTopicFormData({});
+        setEditingTopic(null);
+        fetchData();
+        alert('Tópico criado com sucesso!');
+      } else {
+        const errorData = await response.json();
+        alert(`Erro: ${errorData.message}`);
+      }
+    } catch (error) {
+      console.error('Erro ao criar tópico:', error);
+      alert('Erro ao criar tópico');
+    }
+  };
+
+  const handleUpdateTopic = async (topicId: string) => {
+    try {
+      const response = await fetch(`${API_BASE_URL}/api/admin/topics/${topicId}`, {
+        method: 'PUT',
+        headers: {
+          'Content-Type': 'application/json',
+          'Authorization': `Bearer ${token}`
+        },
+        body: JSON.stringify(topicFormData)
+      });
+
+      if (response.ok) {
+        setIsTopicDialogOpen(false);
+        setTopicFormData({});
+        setEditingTopic(null);
+        fetchData();
+        alert('Tópico atualizado com sucesso!');
+      } else {
+        const errorData = await response.json();
+        alert(`Erro: ${errorData.message}`);
+      }
+    } catch (error) {
+      console.error('Erro ao atualizar tópico:', error);
+      alert('Erro ao atualizar tópico');
+    }
+  };
+
+  const handleDeleteTopic = async (topicId: string, topicName: string) => {
+    if (!confirm(`Tem certeza que deseja excluir o tópico "${topicName}"?`)) {
+      return;
+    }
+
+    try {
+      const response = await fetch(`${API_BASE_URL}/api/admin/topics/${topicId}`, {
+        method: 'DELETE',
+        headers: {
+          'Authorization': `Bearer ${token}`
+        }
+      });
+
+      if (response.ok) {
+        fetchData();
+        alert('Tópico excluído com sucesso!');
+      } else {
+        const errorData = await response.json();
+        alert(`Erro: ${errorData.message}`);
+      }
+    } catch (error) {
+      console.error('Erro ao excluir tópico:', error);
+      alert('Erro ao excluir tópico');
+    }
+  };
+
+  const startEditingTopic = (topic: Topic) => {
+    setEditingTopic(topic.id);
+    setTopicFormData({
+      name: topic.name,
+      description: topic.description || '',
+      categoryId: topic.categoryId,
+      slug: topic.slug,
+      icon: topic.icon || '',
+      color: topic.color || '',
+      order: topic.order
+    });
+    setIsTopicDialogOpen(true);
+  };
+
+  const handleCreateCategory = async () => {
+    try {
+      if (!categoryFormData.name) {
+        alert('Nome é obrigatório');
+        return;
+      }
+
+      const response = await fetch(`${API_BASE_URL}/api/admin/categories`, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          'Authorization': `Bearer ${token}`
+        },
+        body: JSON.stringify({
+          ...categoryFormData,
+          slug: categoryFormData.name?.toLowerCase().replace(/\s+/g, '-'),
+          order: categoryFormData.order || categories.length + 1,
+          isActive: categoryFormData.isActive !== false,
+          availableFrom: categoryFormData.availableFrom || null
+        })
+      });
+
+      if (response.ok) {
+        setIsCategoryDialogOpen(false);
+        setCategoryFormData({});
+        setEditingCategory(null);
+        fetchData();
+        alert('Categoria criada com sucesso!');
+      } else {
+        const errorData = await response.json();
+        alert(`Erro: ${errorData.message}`);
+      }
+    } catch (error) {
+      console.error('Erro ao criar categoria:', error);
+      alert('Erro ao criar categoria');
+    }
+  };
+
   const getCategoryStatus = (category: Category) => {
-    const now = new Date();
-    const availableFrom = category.availableFrom ? new Date(category.availableFrom) : null;
-    
     if (!category.isActive) return 'inactive';
-    if (!availableFrom) return 'available';
-    if (now >= availableFrom) return 'available';
+    if (!category.availableFrom) return 'available'; // Sem data = sempre disponível
+    
+    const now = new Date();
+    let availableFrom;
+    
+    const dateValue = category.availableFrom as any;
+    
+    if (typeof dateValue === 'string' && dateValue.includes('T')) {
+      const datePart = dateValue.split('T')[0];
+      const [year, month, day] = datePart.split('-').map(Number);
+      availableFrom = new Date(year, month - 1, day);
+    } else if (typeof dateValue === 'string' && dateValue.match(/^\d{4}-\d{2}-\d{2}$/)) {
+      const [year, month, day] = dateValue.split('-').map(Number);
+      availableFrom = new Date(year, month - 1, day);
+    } else {
+      availableFrom = new Date(dateValue);
+    }
+    
+    if (isNaN(availableFrom.getTime())) {
+      console.warn('Data inválida encontrada para categoria:', category.name, 'Data:', category.availableFrom);
+      return 'available';
+    }
+    
+    const todayDate = new Date(now.getFullYear(), now.getMonth(), now.getDate());
+    const availableDate = new Date(availableFrom.getFullYear(), availableFrom.getMonth(), availableFrom.getDate());
+    
+    console.log('Data de hoje: ', todayDate);
+    console.log('Data de inicio: ', availableDate);
+    if (todayDate >= availableDate) return 'available';
     return 'coming-soon';
   };
 
   const formatDate = (date: string | Date | null) => {
     if (!date) return 'Sem data definida';
-    const utcDate = new Date(date);
-  
-    return new Intl.DateTimeFormat('pt-BR', {
-      timeZone: 'UTC',
-      day: '2-digit',
-      month: '2-digit',
-      year: 'numeric'
-    }).format(utcDate);
+    
+    try {
+      let dateToFormat;
+      
+      if (typeof date === 'string' && date.includes('T')) {
+        const datePart = date.split('T')[0];
+        const [year, month, day] = datePart.split('-').map(Number);
+        dateToFormat = new Date(year, month - 1, day);
+      }
+      else if (typeof date === 'string' && date.match(/^\d{4}-\d{2}-\d{2}$/)) {
+        const [year, month, day] = date.split('-').map(Number);
+        dateToFormat = new Date(year, month - 1, day);
+      } 
+      else {
+        dateToFormat = new Date(date);
+      }
+      
+      if (isNaN(dateToFormat.getTime())) {
+        return 'Data inválida';
+      }
+
+      return new Intl.DateTimeFormat('pt-BR', {
+        day: '2-digit',
+        month: '2-digit',
+        year: 'numeric'
+      }).format(dateToFormat);
+    } catch (error) {
+      console.warn('Erro ao formatar data:', error);
+      return 'Data inválida';
+    }
   };
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     
-    if (!formData.question.trim() || !formData.category || !formData.explanation.trim()) {
-      alert('Por favor, preencha todos os campos obrigatórios.');
+    if (!formData.question.trim() || !formData.category || !formData.topic || !formData.explanation.trim()) {
+      alert('Por favor, preencha todos os campos obrigatórios (pergunta, categoria, tópico, explicação).');
       return;
     }
 
@@ -276,6 +569,7 @@ export default function AdminPage() {
         question: formData.question.trim(),
         explanation: formData.explanation.trim(),
         category: formData.category,
+        topicId: formData.topic,
         difficulty: formData.difficulty,
         options: validOptions.map(opt => ({
           text: opt.text.trim(),
@@ -305,12 +599,13 @@ export default function AdminPage() {
     }
   };
 
-  const handleEdit = (question: Question) => {
+  const handleEdit = async (question: Question) => {
     const newFormData = {
       question: question.question,
       explanation: question.explanation,
       difficulty: question.difficulty?.id || '',
       category: question.category?.id || '',
+      topic: question.topicId || '',
       options: question.options.map(opt => ({
         text: opt.text,
         isCorrect: opt.isCorrect
@@ -319,6 +614,11 @@ export default function AdminPage() {
     
     setEditingQuestion(question);
     setFormData(newFormData);
+    
+    if (question.category?.id) {
+      await fetchTopicsByCategory(question.category.id);
+    }
+    
     setIsDialogOpen(true);
   };
 
@@ -448,7 +748,7 @@ export default function AdminPage() {
                     </label>
                     <Select
                       value={formData.category}
-                      onValueChange={(value) => setFormData({ ...formData, category: value })}
+                      onValueChange={handleCategoryChange}
                     >
                       <SelectTrigger>
                         <SelectValue placeholder="Selecione uma categoria" />
@@ -457,6 +757,34 @@ export default function AdminPage() {
                         {categories.map((category) => (
                           <SelectItem key={category.id} value={category.id}>
                             {category.name}
+                          </SelectItem>
+                        ))}
+                      </SelectContent>
+                    </Select>
+                  </div>
+
+                  <div>
+                    <label className="block text-sm font-medium text-gray-700 mb-2">
+                      Tópico *
+                    </label>
+                    <Select
+                      value={formData.topic}
+                      onValueChange={(value) => setFormData({ ...formData, topic: value })}
+                      disabled={!formData.category || availableTopics.length === 0}
+                    >
+                      <SelectTrigger>
+                        <SelectValue placeholder={
+                          !formData.category 
+                            ? "Selecione uma categoria primeiro" 
+                            : availableTopics.length === 0 
+                              ? "Nenhum tópico disponível" 
+                              : "Selecione um tópico"
+                        } />
+                      </SelectTrigger>
+                      <SelectContent>
+                        {availableTopics.map((topic) => (
+                          <SelectItem key={topic.id} value={topic.id}>
+                            {topic.name}
                           </SelectItem>
                         ))}
                       </SelectContent>
@@ -480,7 +808,7 @@ export default function AdminPage() {
                       <SelectContent>
                         {difficulties.map((difficulty) => (
                           <SelectItem key={difficulty.id} value={difficulty.id}>
-                            {difficulty.name}
+                            {difficulty.label}
                           </SelectItem>
                         ))}
                       </SelectContent>
@@ -547,6 +875,7 @@ export default function AdminPage() {
           <TabsList>
             <TabsTrigger value="questions">Perguntas ({questions.length})</TabsTrigger>
             <TabsTrigger value="categories">Categorias ({categories.length})</TabsTrigger>
+            <TabsTrigger value="topics">Tópicos ({topics.length})</TabsTrigger>
           </TabsList>
 
           <TabsContent value="questions" className="space-y-4">
@@ -641,6 +970,20 @@ export default function AdminPage() {
           </TabsContent>
 
           <TabsContent value="categories" className="space-y-6">
+            <div className="flex justify-between items-center">
+              <h3 className="text-xl font-semibold">Gerenciar Categorias</h3>
+              <Button 
+                onClick={() => {
+                  setEditingCategory(null);
+                  setCategoryFormData({});
+                  setIsCategoryDialogOpen(true);
+                }}
+                className="flex items-center gap-2"
+              >
+                <Plus className="h-4 w-4" />
+                Nova Categoria
+              </Button>
+            </div>
             <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
               {categories.map((category) => {
                 const status = getCategoryStatus(category);
@@ -797,7 +1140,262 @@ export default function AdminPage() {
               })}
             </div>
           </TabsContent>
+
+          {/* Topics Tab */}
+          <TabsContent value="topics" className="space-y-6">
+            <div className="flex justify-between items-center">
+              <h3 className="text-xl font-semibold">Gerenciar Tópicos</h3>
+              <Button 
+                onClick={() => {
+                  setEditingTopic(null);
+                  setTopicFormData({});
+                  setIsTopicDialogOpen(true);
+                }}
+                className="flex items-center gap-2"
+              >
+                <Plus className="h-4 w-4" />
+                Novo Tópico
+              </Button>
+            </div>
+
+            {topics.length === 0 ? (
+              <Card>
+                <CardContent className="text-center py-12">
+                  <p className="text-gray-500 text-lg">Nenhum tópico cadastrado</p>
+                  <p className="text-gray-400 mt-2">Clique em "Novo Tópico" para começar</p>
+                </CardContent>
+              </Card>
+            ) : (
+              <div className="grid gap-4">
+                {topics.map((topic) => (
+                  <Card key={topic.id} className="hover:shadow-md transition-shadow">
+                    <CardContent className="p-6">
+                      <div className="flex justify-between items-start">
+                        <div className="flex-1">
+                          <div className="flex items-center gap-3 mb-2">
+                            <h4 className="text-lg font-semibold">{topic.name}</h4>
+                            <Badge variant="outline">
+                              {categories.find(c => c.id === topic.categoryId)?.name || 'Categoria não encontrada'}
+                            </Badge>
+                          </div>
+                          <p className="text-gray-600 mb-2">{topic.description}</p>
+                          <div className="text-sm text-gray-500">
+                            Ordem: {topic.order} | Criado em: {new Date(topic.createdAt).toLocaleDateString('pt-BR')}
+                          </div>
+                        </div>
+                        <div className="flex items-center gap-2">
+                          <Button
+                            variant="outline"
+                            size="sm"
+                            onClick={() => startEditingTopic(topic)}
+                          >
+                            <Edit className="h-4 w-4" />
+                          </Button>
+                          <Button
+                            variant="outline"
+                            size="sm"
+                            className="text-red-600 border-red-200 hover:bg-red-50"
+                            onClick={() => handleDeleteTopic(topic.id, topic.name)}
+                          >
+                            <Trash2 className="h-4 w-4" />
+                          </Button>
+                        </div>
+                      </div>
+                    </CardContent>
+                  </Card>
+                ))}
+              </div>
+            )}
+          </TabsContent>
         </Tabs>
+
+        {/* Modal for Topic Creation/Edit */}
+        <Dialog open={isTopicDialogOpen} onOpenChange={setIsTopicDialogOpen}>
+          <DialogContent className="max-w-2xl">
+            <DialogHeader>
+              <DialogTitle>
+                {editingTopic ? 'Editar Tópico' : 'Novo Tópico'}
+              </DialogTitle>
+            </DialogHeader>
+            <div className="space-y-4">
+              <div>
+                <Label htmlFor="topic-name">Nome *</Label>
+                <Input
+                  id="topic-name"
+                  value={topicFormData.name || ''}
+                  onChange={(e) => setTopicFormData({ ...topicFormData, name: e.target.value })}
+                  placeholder="Digite o nome do tópico"
+                />
+              </div>
+              
+              <div>
+                <Label htmlFor="topic-description">Descrição</Label>
+                <Textarea
+                  id="topic-description"
+                  value={topicFormData.description || ''}
+                  onChange={(e) => setTopicFormData({ ...topicFormData, description: e.target.value })}
+                  placeholder="Digite a descrição do tópico"
+                  rows={3}
+                />
+              </div>
+
+              <div>
+                <Label htmlFor="topic-category">Categoria *</Label>
+                <Select
+                  value={topicFormData.categoryId || ''}
+                  onValueChange={(value) => setTopicFormData({ ...topicFormData, categoryId: value })}
+                >
+                  <SelectTrigger>
+                    <SelectValue placeholder="Selecione uma categoria" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    {categories.map((category) => (
+                      <SelectItem key={category.id} value={category.id}>
+                        {category.name}
+                      </SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
+              </div>
+
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                <div>
+                  <Label htmlFor="topic-icon">Ícone</Label>
+                  <Input
+                    id="topic-icon"
+                    value={topicFormData.icon || ''}
+                    onChange={(e) => setTopicFormData({ ...topicFormData, icon: e.target.value })}
+                    placeholder="Ex: code, database"
+                  />
+                </div>
+                
+                <div>
+                  <Label htmlFor="topic-color">Cor (hex)</Label>
+                  <Input
+                    id="topic-color"
+                    value={topicFormData.color || ''}
+                    onChange={(e) => setTopicFormData({ ...topicFormData, color: e.target.value })}
+                    placeholder="#3178C6"
+                  />
+                </div>
+              </div>
+
+              <div>
+                <Label htmlFor="topic-order">Ordem</Label>
+                <Input
+                  id="topic-order"
+                  type="number"
+                  value={topicFormData.order || ''}
+                  onChange={(e) => setTopicFormData({ ...topicFormData, order: parseInt(e.target.value) || 0 })}
+                  placeholder="1"
+                />
+              </div>
+            </div>
+            
+            <div className="flex justify-end gap-2 mt-6">
+              <Button 
+                variant="outline" 
+                onClick={() => setIsTopicDialogOpen(false)}
+              >
+                Cancelar
+              </Button>
+              <Button 
+                onClick={editingTopic ? () => handleUpdateTopic(editingTopic) : handleCreateTopic}
+              >
+                {editingTopic ? 'Salvar' : 'Criar'}
+              </Button>
+            </div>
+          </DialogContent>
+        </Dialog>
+
+        {/* Modal for Category Creation/Edit */}
+        <Dialog open={isCategoryDialogOpen} onOpenChange={setIsCategoryDialogOpen}>
+          <DialogContent className="max-w-2xl">
+            <DialogHeader>
+              <DialogTitle>
+                {editingCategory ? 'Editar Categoria' : 'Nova Categoria'}
+              </DialogTitle>
+            </DialogHeader>
+            <div className="space-y-4">
+              <div>
+                <Label htmlFor="category-name">Nome *</Label>
+                <Input
+                  id="category-name"
+                  value={categoryFormData.name || ''}
+                  onChange={(e) => setCategoryFormData({ ...categoryFormData, name: e.target.value })}
+                  placeholder="Digite o nome da categoria"
+                />
+              </div>
+              
+              <div>
+                <Label htmlFor="category-description">Descrição</Label>
+                <Textarea
+                  id="category-description"
+                  value={categoryFormData.description || ''}
+                  onChange={(e) => setCategoryFormData({ ...categoryFormData, description: e.target.value })}
+                  placeholder="Digite a descrição da categoria"
+                  rows={3}
+                />
+              </div>
+
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                <div>
+                  <Label htmlFor="category-color">Cor (hex)</Label>
+                  <Input
+                    id="category-color"
+                    value={categoryFormData.color || ''}
+                    onChange={(e) => setCategoryFormData({ ...categoryFormData, color: e.target.value })}
+                    placeholder="#3178C6"
+                  />
+                </div>
+                
+                <div>
+                  <Label htmlFor="category-order">Ordem</Label>
+                  <Input
+                    id="category-order"
+                    type="number"
+                    value={categoryFormData.order || ''}
+                    onChange={(e) => setCategoryFormData({ ...categoryFormData, order: parseInt(e.target.value) || 0 })}
+                    placeholder="1"
+                  />
+                </div>
+              </div>
+
+              <div>
+                <Label htmlFor="category-available-from">Disponível a partir de</Label>
+                <Input
+                  id="category-available-from"
+                  type="date"
+                  value={categoryFormData.availableFrom || ''}
+                  onChange={(e) => setCategoryFormData({ ...categoryFormData, availableFrom: e.target.value })}
+                />
+              </div>
+
+              <div className="flex items-center space-x-2">
+                <Switch
+                  id="category-active"
+                  checked={categoryFormData.isActive !== false}
+                  onCheckedChange={(checked) => setCategoryFormData({ ...categoryFormData, isActive: checked })}
+                />
+                <Label htmlFor="category-active">Categoria ativa</Label>
+              </div>
+            </div>
+            
+            <div className="flex justify-end gap-2 mt-6">
+              <Button 
+                variant="outline" 
+                onClick={() => setIsCategoryDialogOpen(false)}
+              >
+                Cancelar
+              </Button>
+              <Button 
+                onClick={editingCategory ? () => handleSaveCategory(editingCategory) : handleCreateCategory}
+              >
+                {editingCategory ? 'Salvar' : 'Criar'}
+              </Button>
+            </div>
+          </DialogContent>
+        </Dialog>
       </div>
     </div>
   );

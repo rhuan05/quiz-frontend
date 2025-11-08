@@ -7,7 +7,6 @@ import { Alert, AlertDescription } from '../ui/alert';
 import { Mail, Loader2, Eye, EyeOff, AlertCircle } from 'lucide-react';
 import { useAuth } from '../../contexts/auth-context';
 import { apiRequest } from '../../lib/queryClient';
-import { useQuiz } from '../../hooks/use-quiz';
 import { useLocation } from 'wouter';
 import { GoogleLoginButton } from './google-login-button';
 import { CompleteProfileModal } from './complete-profile-modal';
@@ -42,7 +41,6 @@ export function AuthModal({ isOpen, onClose }: AuthModalProps) {
   const [message, setMessage] = useState<string | null>(null);
   const [isSuccess, setIsSuccess] = useState(false);
   const [isLoading, setIsLoading] = useState(false);
-  const { startQuiz } = useQuiz();
   const [, setLocation] = useLocation();
 
   const [showCompleteProfile, setShowCompleteProfile] = useState(false);
@@ -100,15 +98,10 @@ export function AuthModal({ isOpen, onClose }: AuthModalProps) {
           await login(email, password);
         }
 
-        setIsLoading(true);
-        await startQuiz();
-        await setTimeout(() => {
-          onClose();
-          setLocation('/quiz');
-        }, 10);
+        onClose();
+        setLocation('/');
       } catch (error: any) {
         setMessage(error.message || "Erro desconhecido.");
-
         setIsSuccess(false);
       } finally {
         setIsLoading(false);
@@ -203,11 +196,10 @@ export function AuthModal({ isOpen, onClose }: AuthModalProps) {
   const handleStartQuizAfterAuth = async () => {
     try {
       setIsLoading(true);
-      await startQuiz();
       onClose();
-      setLocation('/quiz');
+      setLocation('/');
     } catch (error: any) {
-      setMessage(error.message || "Erro ao iniciar quiz");
+      setMessage(error.message || "Erro ao redirecionar");
       setIsSuccess(false);
     } finally {
       setIsLoading(false);
@@ -329,7 +321,7 @@ export function AuthModal({ isOpen, onClose }: AuthModalProps) {
           {isLogin ? (
             <div className="text-sm text-gray-600 space-y-1">
               <p>• Entre com suas credenciais para acessar seu histórico</p>
-              <p>• Seus resultados anteriores serão carregados</p>
+              <p>• Você será redirecionado para escolher seus estudos</p>
             </div>
           ) : (
             <div className="text-sm text-gray-600 space-y-1">
@@ -351,7 +343,7 @@ export function AuthModal({ isOpen, onClose }: AuthModalProps) {
                   {isLogin ? 'Entrando...' : 'Criando conta...'}
                 </>
               ) : (
-                isLogin ? 'Entrar e Começar Quiz' : 'Criar Conta e Começar Quiz'
+                isLogin ? 'Entrar' : 'Criar Conta'
               )}
             </Button>
 
