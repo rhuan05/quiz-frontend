@@ -419,6 +419,67 @@ export default function AdminPage() {
     }
   };
 
+  const handleDeleteCategory = async (categoryId: string, categoryName: string) => {
+    const topicsInCategory = topics.filter(topic => topic.categoryId === categoryId);
+    const questionsInCategory = questions.filter(q => q.category?.id === categoryId);
+    
+    if (topicsInCategory.length > 0 || questionsInCategory.length > 0) {
+      const confirmMessage = `A categoria "${categoryName}" contém:\n` +
+        `• ${topicsInCategory.length} tópico(s)\n` +
+        `• ${questionsInCategory.length} pergunta(s)\n\n` +
+        `Isso irá excluir PERMANENTEMENTE toda a categoria e seu conteúdo.\n` +
+        `Tem certeza que deseja continuar?`;
+        
+      if (!confirm(confirmMessage)) {
+        return;
+      }
+
+      try {
+        const response = await fetch(`${API_BASE_URL}/api/admin/categories/${categoryId}/force`, {
+          method: 'DELETE',
+          headers: {
+            'Authorization': `Bearer ${token}`
+          }
+        });
+
+        if (response.ok) {
+          fetchData();
+          alert('Categoria e todo seu conteúdo foram excluídos com sucesso!');
+        } else {
+          const errorData = await response.json();
+          alert(`Erro: ${errorData.message}`);
+        }
+      } catch (error) {
+        console.error('Erro ao excluir categoria:', error);
+        alert('Erro ao excluir categoria');
+      }
+    } else {
+      if (!confirm(`Tem certeza que deseja excluir a categoria "${categoryName}"?`)) {
+        return;
+      }
+
+      try {
+        const response = await fetch(`${API_BASE_URL}/api/admin/categories/${categoryId}`, {
+          method: 'DELETE',
+          headers: {
+            'Authorization': `Bearer ${token}`
+          }
+        });
+
+        if (response.ok) {
+          fetchData();
+          alert('Categoria excluída com sucesso!');
+        } else {
+          const errorData = await response.json();
+          alert(`Erro: ${errorData.message}`);
+        }
+      } catch (error) {
+        console.error('Erro ao excluir categoria:', error);
+        alert('Erro ao excluir categoria');
+      }
+    }
+  };
+
   const startEditingTopic = (topic: Topic) => {
     setEditingTopic(topic.id);
     setTopicFormData({
@@ -1115,22 +1176,32 @@ export default function AdminPage() {
                             </div>
                           </div>
 
-                          <div className="flex justify-end gap-2 pt-3 border-t">
+                          <div className="flex justify-between gap-2 pt-3 border-t">
                             <Button 
                               size="sm" 
-                              variant="outline" 
-                              onClick={() => setEditingCategory(null)}
+                              variant="destructive" 
+                              onClick={() => handleDeleteCategory(category.id, category.name)}
                             >
-                              <X className="w-4 h-4 mr-1" />
-                              Cancelar
+                              <Trash2 className="w-4 h-4 mr-1" />
+                              Excluir
                             </Button>
-                            <Button 
-                              size="sm" 
-                              onClick={() => handleSaveCategory(category.id)}
-                            >
-                              <Save className="w-4 h-4 mr-1" />
-                              Salvar
-                            </Button>
+                            <div className="flex gap-2">
+                              <Button 
+                                size="sm" 
+                                variant="outline" 
+                                onClick={() => setEditingCategory(null)}
+                              >
+                                <X className="w-4 h-4 mr-1" />
+                                Cancelar
+                              </Button>
+                              <Button 
+                                size="sm" 
+                                onClick={() => handleSaveCategory(category.id)}
+                              >
+                                <Save className="w-4 h-4 mr-1" />
+                                Salvar
+                              </Button>
+                            </div>
                           </div>
                         </div>
                       )}
