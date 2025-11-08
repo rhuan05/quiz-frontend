@@ -156,46 +156,49 @@ export function CategoryTopicDifficultyModal({
   };
 
   const renderStepIndicator = () => (
-    <div className="flex items-center justify-center space-x-2 mb-6">
-      <div className={`flex items-center space-x-2 px-3 py-1 rounded-full text-sm ${
+    <div className="flex items-center justify-center space-x-1 sm:space-x-2 mb-4 sm:mb-6">
+      <div className={`flex items-center space-x-1 sm:space-x-2 px-2 sm:px-3 py-1 rounded-full text-xs sm:text-sm ${
         step === 'category' ? 'bg-blue-100 text-blue-800' : 'bg-gray-100 text-gray-600'
       }`}>
-        <BookOpen className="w-4 h-4" />
-        <span>Categoria</span>
+        <BookOpen className="w-3 h-3 sm:w-4 sm:h-4" />
+        <span className="hidden sm:inline">Categoria</span>
+        <span className="sm:hidden">Cat.</span>
       </div>
-      <ChevronRight className="w-4 h-4 text-gray-400" />
-      <div className={`flex items-center space-x-2 px-3 py-1 rounded-full text-sm ${
+      <ChevronRight className="w-3 h-3 sm:w-4 sm:h-4 text-gray-400" />
+      <div className={`flex items-center space-x-1 sm:space-x-2 px-2 sm:px-3 py-1 rounded-full text-xs sm:text-sm ${
         step === 'topic' ? 'bg-blue-100 text-blue-800' : 'bg-gray-100 text-gray-600'
       }`}>
-        <Target className="w-4 h-4" />
-        <span>Tópico</span>
+        <Target className="w-3 h-3 sm:w-4 sm:h-4" />
+        <span className="hidden sm:inline">Tópico</span>
+        <span className="sm:hidden">Tóp.</span>
       </div>
-      <ChevronRight className="w-4 h-4 text-gray-400" />
-      <div className={`flex items-center space-x-2 px-3 py-1 rounded-full text-sm ${
+      <ChevronRight className="w-3 h-3 sm:w-4 sm:h-4 text-gray-400" />
+      <div className={`flex items-center space-x-1 sm:space-x-2 px-2 sm:px-3 py-1 rounded-full text-xs sm:text-sm ${
         step === 'difficulty' ? 'bg-blue-100 text-blue-800' : 'bg-gray-100 text-gray-600'
       }`}>
-        <Zap className="w-4 h-4" />
-        <span>Dificuldade</span>
+        <Zap className="w-3 h-3 sm:w-4 sm:h-4" />
+        <span className="hidden sm:inline">Dificuldade</span>
+        <span className="sm:hidden">Dif.</span>
       </div>
     </div>
   );
 
   const renderCategoryStep = () => (
-    <div className="space-y-4">
+    <div className="space-y-4 w-full">
       <h3 className="text-lg font-semibold text-center">Escolha uma Categoria</h3>
-      <div className="grid grid-cols-1 gap-3 max-h-96 overflow-y-auto">
+      <div className="grid grid-cols-1 gap-3 max-h-60 overflow-y-auto w-full">
         {categories.map((category) => (
           <button
             key={category.id}
             onClick={() => handleCategorySelect(category)}
-            className="p-4 text-left rounded-lg border border-gray-200 hover:border-blue-300 hover:bg-blue-50 transition-all duration-200 focus:outline-none focus:ring-2 focus:ring-blue-500"
+            className="p-3 sm:p-4 text-left rounded-lg border border-gray-200 hover:border-blue-300 hover:bg-blue-50 transition-all duration-200 focus:outline-none focus:ring-2 focus:ring-blue-500"
           >
             <div className="flex items-center space-x-3">
-              {category.icon && <span className="text-2xl">{category.icon}</span>}
-              <div>
-                <h4 className="font-medium text-gray-900">{category.name}</h4>
+              {category.icon && <span className="text-xl sm:text-2xl">{category.icon}</span>}
+              <div className="flex-1 min-w-0">
+                <h4 className="font-medium text-gray-900 text-sm sm:text-base">{category.name}</h4>
                 {category.description && (
-                  <p className="text-sm text-gray-600 mt-1">{category.description}</p>
+                  <p className="text-xs sm:text-sm text-gray-600 mt-1 truncate">{category.description}</p>
                 )}
                 <p className="text-xs text-blue-600 mt-2">
                   {category.topics.length} tópicos disponíveis
@@ -209,26 +212,26 @@ export function CategoryTopicDifficultyModal({
   );
 
   const renderTopicStep = () => (
-    <div className="space-y-4">
+    <div className="space-y-4 w-full">
       <div className="text-center">
         <h3 className="text-lg font-semibold">Escolha um Tópico</h3>
-        <p className="text-sm text-gray-600 mt-1">
+        <p className="text-xs sm:text-sm text-gray-600 mt-1">
           Categoria: <span className="font-medium">{selectedCategory?.name}</span>
         </p>
       </div>
-      <div className="grid grid-cols-1 gap-3 max-h-96 overflow-y-auto">
+      <div className="grid grid-cols-1 gap-3 max-h-60 overflow-y-auto w-full">
         {selectedCategory?.topics.map((topic) => (
           <button
             key={topic.id}
             onClick={() => handleTopicSelect(topic)}
-            className="p-4 text-left rounded-lg border border-gray-200 hover:border-blue-300 hover:bg-blue-50 transition-all duration-200 focus:outline-none focus:ring-2 focus:ring-blue-500"
+            className="p-3 sm:p-4 text-left rounded-lg border border-gray-200 hover:border-blue-300 hover:bg-blue-50 transition-all duration-200 focus:outline-none focus:ring-2 focus:ring-blue-500"
           >
             <div className="flex items-center space-x-3">
-              {topic.icon && <span className="text-2xl">{topic.icon}</span>}
-              <div>
-                <h4 className="font-medium text-gray-900">{topic.name}</h4>
+              {topic.icon && <span className="text-xl sm:text-2xl">{topic.icon}</span>}
+              <div className="flex-1 min-w-0">
+                <h4 className="font-medium text-gray-900 text-sm sm:text-base">{topic.name}</h4>
                 {topic.description && (
-                  <p className="text-sm text-gray-600 mt-1">{topic.description}</p>
+                  <p className="text-xs sm:text-sm text-gray-600 mt-1 truncate">{topic.description}</p>
                 )}
               </div>
             </div>
@@ -239,27 +242,27 @@ export function CategoryTopicDifficultyModal({
   );
 
   const renderDifficultyStep = () => (
-    <div className="space-y-4">
+    <div className="space-y-4 w-full">
       <div className="text-center">
         <h3 className="text-lg font-semibold">Escolha a Dificuldade</h3>
-        <p className="text-sm text-gray-600 mt-1">
+        <p className="text-xs sm:text-sm text-gray-600 mt-1">
           <span className="font-medium">{selectedCategory?.name}</span> → 
           <span className="font-medium"> {selectedTopic?.name}</span>
         </p>
       </div>
-      <div className="grid grid-cols-1 gap-3">
+      <div className="grid grid-cols-1 gap-3 w-full">
         {difficulties.map((difficulty) => (
           <button
             key={difficulty.id}
             onClick={() => handleDifficultySelect(difficulty)}
-            className="p-4 text-left rounded-lg border border-gray-200 hover:border-blue-300 hover:bg-blue-50 transition-all duration-200 focus:outline-none focus:ring-2 focus:ring-blue-500"
+            className="p-3 sm:p-4 text-left rounded-lg border border-gray-200 hover:border-blue-300 hover:bg-blue-50 transition-all duration-200 focus:outline-none focus:ring-2 focus:ring-blue-500"
           >
             <div className="flex items-center justify-between">
               <div className="flex items-center space-x-3">
-                <span className="text-2xl">{getDifficultyIcon(difficulty.name)}</span>
-                <div>
-                  <h4 className="font-medium text-gray-900">{difficulty.label}</h4>
-                  <p className="text-sm text-gray-600">{difficulty.points} pontos por acerto</p>
+                <span className="text-xl sm:text-2xl">{getDifficultyIcon(difficulty.name)}</span>
+                <div className="flex-1 min-w-0">
+                  <h4 className="font-medium text-gray-900 text-sm sm:text-base">{difficulty.label}</h4>
+                  <p className="text-xs sm:text-sm text-gray-600">{difficulty.points} pontos por acerto</p>
                 </div>
               </div>
             </div>
@@ -271,39 +274,39 @@ export function CategoryTopicDifficultyModal({
 
   return (
     <Dialog open={isOpen} onOpenChange={onClose}>
-      <DialogContent className="sm:max-w-md">
-        <DialogHeader>
+      <DialogContent className="fixed left-[50%] top-[50%] translate-x-[-50%] translate-y-[-50%] w-[calc(100vw-2rem)] max-w-[400px] max-h-[90vh] overflow-hidden flex flex-col">
+        <DialogHeader className="text-center">
           <DialogTitle className="text-center">Configurar Quiz</DialogTitle>
         </DialogHeader>
 
         {renderStepIndicator()}
 
         {error && (
-          <Alert variant="destructive" className="mb-4">
+          <Alert variant="destructive" className="mb-4 mx-auto max-w-full">
             <AlertDescription>{error}</AlertDescription>
           </Alert>
         )}
 
         {loading ? (
-          <div className="flex justify-center items-center py-8">
+          <div className="flex justify-center items-center py-8 flex-1">
             <Loader2 className="w-6 h-6 animate-spin" />
             <span className="ml-2">Carregando...</span>
           </div>
         ) : (
-          <div className="space-y-4">
+          <div className="space-y-4 overflow-y-auto flex-1 min-h-0">
             {step === 'category' && renderCategoryStep()}
             {step === 'topic' && renderTopicStep()}
             {step === 'difficulty' && renderDifficultyStep()}
           </div>
         )}
 
-        <div className="flex justify-between pt-4">
+        <div className="flex justify-between pt-4 gap-2 mt-auto">
           {step !== 'category' && (
-            <Button variant="outline" onClick={handleBack}>
+            <Button variant="outline" onClick={handleBack} className="text-sm">
               Voltar
             </Button>
           )}
-          <Button variant="outline" onClick={onClose} className="ml-auto">
+          <Button variant="outline" onClick={onClose} className="ml-auto text-sm">
             Cancelar
           </Button>
         </div>

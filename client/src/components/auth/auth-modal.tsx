@@ -25,7 +25,23 @@ export function AuthModal({ isOpen, onClose }: AuthModalProps) {
   const [password, setPassword] = useState('');
   const [confirmPassword, setConfirmPassword] = useState('');
   const [username, setUsername] = useState('');
+  const [phone, setPhone] = useState('');
   const [showPassword, setShowPassword] = useState(false);
+
+  const formatPhone = (value: string) => {
+    const numbers = value.replace(/\D/g, '');
+    if (numbers.length <= 11) {
+      return numbers
+        .replace(/(\d{2})(\d)/, '($1) $2')
+        .replace(/(\d{5})(\d)/, '$1-$2');
+    }
+    return value;
+  };
+
+  const handlePhoneChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const formatted = formatPhone(e.target.value);
+    setPhone(formatted);
+  };
 
   const handleUsernameChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     const value = e.target.value;
@@ -36,7 +52,7 @@ export function AuthModal({ isOpen, onClose }: AuthModalProps) {
     setUsername(formattedValue);
   };
   const [isLogin, setIsLogin] = useState(true);
-  const [formErrors, setFormErrors] = useState<{username?: string, email?: string; password?: string; confirmPassword?: string}>({});
+  const [formErrors, setFormErrors] = useState<{username?: string, phone?: string, email?: string; password?: string; confirmPassword?: string}>({});
   const { login } = useAuth();
   const [message, setMessage] = useState<string | null>(null);
   const [isSuccess, setIsSuccess] = useState(false);
@@ -56,7 +72,7 @@ export function AuthModal({ isOpen, onClose }: AuthModalProps) {
   const loading = isLoading;
 
   const validateForm = () => {
-    const newErrors: {username?: string, email?: string; password?: string; confirmPassword?: string} = {};
+    const newErrors: {username?: string, phone?: string, email?: string; password?: string; confirmPassword?: string} = {};
 
     if (!email.trim()) {
       newErrors.email = 'Email é obrigatório';
@@ -71,6 +87,16 @@ export function AuthModal({ isOpen, onClose }: AuthModalProps) {
     }
 
     if (!isLogin) {
+      if (!username.trim()) {
+        newErrors.username = 'Nome de usuário é obrigatório';
+      }
+
+      if (!phone.trim()) {
+        newErrors.phone = 'Telefone é obrigatório';
+      } else if (phone.replace(/\D/g, '').length !== 11) {
+        newErrors.phone = 'Telefone deve ter 11 dígitos (com DDD)';
+      }
+
       if (!confirmPassword.trim()) {
         newErrors.confirmPassword = 'Confirme sua senha';
       } else if (password !== confirmPassword) {
@@ -130,6 +156,7 @@ export function AuthModal({ isOpen, onClose }: AuthModalProps) {
               setUserRegistrationData({
                 username: data.username,
                 email: data.email,
+                phone: data.phone,
                 passwordHash: result.passwordHash
               });
               setRequiresEmailVerification(true);
@@ -153,7 +180,9 @@ export function AuthModal({ isOpen, onClose }: AuthModalProps) {
     if (!loading) {
       setEmail('');
       setPassword('');
+      setConfirmPassword('');
       setUsername('');
+      setPhone('');
       setFormErrors({});
       setShowPassword(false);
       setIsLogin(true);
@@ -241,8 +270,33 @@ export function AuthModal({ isOpen, onClose }: AuthModalProps) {
                   onChange={handleUsernameChange}
                   className={`font-mono ${formErrors.username ? 'border-red-500 focus:border-red-500' : ''}`}
               />
+              {formErrors.username && (
+                <p className="text-sm text-red-600">{formErrors.username}</p>
+              )}
               <p className="text-xs text-gray-500">
                 Apenas letras, números, pontos e underscores. Sem espaços.
+              </p>
+          </div> : <></>}
+
+          {/* Campo Telefone */}
+          { !isLogin ? <div className="space-y-2">
+              <Label htmlFor="phone">Telefone</Label>
+              <Input
+                  type="tel"
+                  name="phone"
+                  id="phone"
+                  placeholder="(11) 99999-9999"
+                  disabled={loading}
+                  value={phone}
+                  onChange={handlePhoneChange}
+                  maxLength={15}
+                  className={formErrors.phone ? 'border-red-500 focus:border-red-500' : ''}
+              />
+              {formErrors.phone && (
+                <p className="text-sm text-red-600">{formErrors.phone}</p>
+              )}
+              <p className="text-xs text-gray-500">
+                Digite seu telefone com DDD (11 dígitos).
               </p>
           </div> : <></>}
 
@@ -334,7 +388,7 @@ export function AuthModal({ isOpen, onClose }: AuthModalProps) {
           <div className="space-y-3">
             <Button
               type="submit"
-              disabled={loading || !email.trim() || !password.trim()}
+              disabled={loading || !email.trim() || !password.trim() || (!isLogin && (!username.trim() || !phone.trim()))}
               className="w-full"
             >
               {loading ? (
