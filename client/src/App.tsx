@@ -18,6 +18,7 @@ import Dashboard from "./components/dashboard/dashboard";
 import AdminPage from "./pages/admin";
 import RankingPage from "./pages/ranking";
 import SimpleRankingPage from "./pages/simple-ranking";
+import PremiumPage from "./pages/premium";
 
 function Router() {
   return (
@@ -31,6 +32,7 @@ function Router() {
       <Route path="/admin" component={AdminPage} />
       <Route path="/ranking" component={RankingPage} />
       <Route path="/simple-ranking" component={SimpleRankingPage} />
+      <Route path="/premium" component={PremiumPage} />
       <Route component={NotFound} />
     </Switch>
   );
