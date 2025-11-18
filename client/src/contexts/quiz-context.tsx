@@ -10,6 +10,7 @@ interface QuizState {
     optionId: string;
     isCorrect: boolean;
     timeSpent: number;
+    pointsEarned?: number;
   }>;
   score: number;
   isLoading: boolean;
@@ -19,6 +20,7 @@ interface QuizState {
     isCorrect: boolean;
     correctOption: any;
     explanation: string;
+    pointsEarned?: number;
   } | null;
   user: {
     id: string;
@@ -31,7 +33,7 @@ type QuizAction =
   | { type: 'SET_LOADING'; payload: boolean }
   | { type: 'SET_ERROR'; payload: string | null }
   | { type: 'START_QUIZ'; payload: { sessionToken: string; questions: QuestionWithOptions[]; user?: { id: string; email: string; name: string; } } }
-  | { type: 'SUBMIT_ANSWER'; payload: { questionId: string; optionId: string; isCorrect: boolean; timeSpent: number; feedbackData: any } }
+  | { type: 'SUBMIT_ANSWER'; payload: { questionId: string; optionId: string; isCorrect: boolean; timeSpent: number; feedbackData: any; pointsEarned?: number } }
   | { type: 'NEXT_QUESTION' }
   | { type: 'SET_FEEDBACK'; payload: { show: boolean; data?: any } }
   | { type: 'RESET_QUIZ' };
@@ -87,6 +89,7 @@ function quizReducer(state: QuizState, action: QuizAction): QuizState {
         optionId: action.payload.optionId,
         isCorrect: action.payload.isCorrect,
         timeSpent: action.payload.timeSpent,
+        pointsEarned: action.payload.pointsEarned,
       };
       
       const newAnswers = [...state.answers, newAnswer];
@@ -162,7 +165,8 @@ export function QuizProvider({ children }: { children: ReactNode }) {
                 optionId: answer.optionId,
                 isCorrect: answer.isCorrect,
                 timeSpent: answer.timeSpent,
-                feedbackData: null
+                feedbackData: null,
+                pointsEarned: answer.pointsEarned
               }
             });
           });

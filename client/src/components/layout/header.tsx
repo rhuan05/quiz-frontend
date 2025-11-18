@@ -1,20 +1,29 @@
 import { Button } from "../../components/ui/button";
 import { useLocation } from "wouter";
-import { Code, LogIn, LogOut, Menu, X, Trophy, Crown, CreditCard, User } from "lucide-react";
+import { Code, LogIn, LogOut, Menu, X, Trophy, Crown, User, Calendar } from "lucide-react";
 import { useQuiz } from "../../hooks/use-quiz";
 import { useAuth } from "../../contexts/auth-context";
+import { usePremiumCheck } from "../../hooks/use-premium-check";
 import { useState, useEffect } from 'react';
 import { AuthModal } from "../auth/auth-modal";
+import { PremiumRequiredAlert } from "../quiz/premium-required-alert";
+import { apiRequest } from "../../lib/queryClient";
+
+interface PremiumStatus {
+  isPremium: boolean;
+  premiumExpiresAt?: string;
+  daysRemaining?: number;
+}
 
 const UserAvatar = ({ user }: { user: any }) => {
   const [imageError, setImageError] = useState(false);
   const [imageLoading, setImageLoading] = useState(true);
-  
+
   useEffect(() => {
     setImageError(false);
     setImageLoading(true);
-  }, [user?.avatar]);
-  
+  }, [user?.avatar, user]);
+
   if (!user?.avatar || imageError) {
     return (
       <div className="w-8 h-8 bg-gray-100 border border-gray-200 flex items-center justify-center">
@@ -22,18 +31,18 @@ const UserAvatar = ({ user }: { user: any }) => {
       </div>
     );
   }
-  
+
   return (
-      <img
-        src={user.avatar}
-        alt={user.displayName || user.username || 'Usuário'}
-        className={`w-8 h-8 rounded-full object-cover border border-gray-200 transition-opacity duration-200 ${imageLoading ? 'opacity-0' : 'opacity-100'}`}
-        onLoad={() => setImageLoading(false)}
-        onError={() => {
-          setImageError(true);
-          setImageLoading(false);
-        }}
-      />
+    <img
+      src={user.avatar}
+      alt={user.displayName || user.username || 'Usuário'}
+      className={`w-8 h-8 rounded-full object-cover border border-gray-200 transition-opacity duration-200 ${imageLoading ? 'opacity-0' : 'opacity-100'}`}
+      onLoad={() => setImageLoading(false)}
+      onError={() => {
+        setImageError(true);
+        setImageLoading(false);
+      }}
+    />
   );
 };
 
@@ -41,26 +50,73 @@ export default function Header() {
   const [location, setLocation] = useLocation();
   const [authError, setAuthError] = useState<string>('');
   const [showAuthModal, setShowAuthModal] = useState(false);
-  const [isMenuOpen, setIsMenuOpen] = useState(false); // Controle do menu hamburguer
+  const [showPremiumAlert, setShowPremiumAlert] = useState(false);
+  const [premiumAlertMessage, setPremiumAlertMessage] = useState('');
+  const [isMenuOpen, setIsMenuOpen] = useState(false);
+  const [premiumStatus, setPremiumStatus] = useState<PremiumStatus | null>(null);
 
   const { startQuiz, resetQuiz, isLoading } = useQuiz();
   const { isAuthenticated, user, logout } = useAuth();
+  const { checkPremiumAccess } = usePremiumCheck();
   const [, setIsLoading] = useState(false);
 
   const handleStartQuiz = async () => {
     setAuthError('');
-    const token = localStorage.getItem("authToken");
-    if (token) {
-      setIsLoading(true);
-      await startQuiz();
-      setTimeout(() => setLocation('/quiz'), 10);
+    
+    const accessCheck = await checkPremiumAccess();
+    
+    if (!accessCheck.hasAccess) {
+      if (accessCheck.needsPremium) {
+        setPremiumAlertMessage(accessCheck.message || 'Premium necessário');
+        setShowPremiumAlert(true);
+      } else {
+        setShowAuthModal(true);
+      }
+      return;
+    }
+
+    setIsLoading(true);
+    await startQuiz();
+    setTimeout(() => setLocation('/quiz'), 10);
+  };
+
+  useEffect(() => {
+    if (isAuthenticated && user) {
+      loadPremiumStatus();
     } else {
-      setShowAuthModal(true);
+      setPremiumStatus(null);
+    }
+  }, [isAuthenticated, user]);
+
+  useEffect(() => {
+    const handlePremiumStatusChange = () => {
+      if (isAuthenticated && user) {
+        loadPremiumStatus();
+      }
+    };
+
+    window.addEventListener('premiumStatusChanged', handlePremiumStatusChange);
+    
+    return () => {
+      window.removeEventListener('premiumStatusChanged', handlePremiumStatusChange);
+    };
+  }, [isAuthenticated, user]);
+
+  const loadPremiumStatus = async () => {
+    try {
+      const response = await apiRequest('GET', '/api/user/premium-status');
+
+      if (response.ok) {
+        const data = await response.json();
+        setPremiumStatus(data);
+      }
+    } catch (err: any) {
+      console.error('Error loading premium status in header:', err);
     }
   };
 
   const handleAuth = async (_email: string, _password: string) => {
-    try {      
+    try {
       setAuthError('');
       const sessionToken = await startQuiz();
       if (!sessionToken) throw new Error("Sessão não foi criada corretamente");
@@ -72,7 +128,26 @@ export default function Header() {
     }
   };
 
-  // Menu de botões de autenticação (desktop e mobile)
+  const shouldShowPremiumButton = () => {
+    if (!isAuthenticated) return false;
+    if (!premiumStatus) return true;
+    if (!premiumStatus.isPremium) return true;
+    return premiumStatus.daysRemaining === 0;
+  };
+
+  const formatPremiumDisplay = () => {
+    if (!premiumStatus || !premiumStatus.isPremium) return null;
+
+    const daysRemaining = premiumStatus.daysRemaining || 0;
+    const totalDays = 30;
+
+    return {
+      text: `${totalDays - daysRemaining}/${totalDays}`,
+      isExpiringSoon: daysRemaining <= 5,
+      daysLeft: daysRemaining
+    };
+  };
+
   const AuthButtons = ({ isMobile = false }: { isMobile?: boolean }) => (
     isAuthenticated ? (
       <>
@@ -130,7 +205,7 @@ export default function Header() {
       <header className="bg-white shadow-sm border-b border-gray-200 sticky top-0 z-40">
         <div className="max-w-6xl mx-auto px-4 sm:px-6 lg:px-8">
           <div className="flex justify-between items-center h-16">
-            <div 
+            <div
               className="flex items-center space-x-3 cursor-pointer"
               onClick={() => {
                 resetQuiz();
@@ -156,6 +231,29 @@ export default function Header() {
                 Ranking
               </Button>
 
+              {shouldShowPremiumButton() && (
+                <Button
+                  variant="ghost"
+                  onClick={() => setLocation("/premium")}
+                  className="text-yellow-600 hover:text-yellow-700"
+                >
+                  <Crown className="mr-2 h-4 w-4" />
+                  Premium
+                </Button>
+              )}
+
+              {formatPremiumDisplay() && (
+                <div className="flex items-center space-x-1">
+                  <Calendar className="h-3 w-3 text-yellow-500" />
+                  <span className={`text-xs font-medium ${formatPremiumDisplay()!.isExpiringSoon
+                      ? 'text-red-600'
+                      : 'text-yellow-600'
+                    }`}>
+                    Premium {formatPremiumDisplay()!.text} dias
+                  </span>
+                </div>
+              )}
+
               {location !== "/quiz" && !location.includes("results") && (
                 <Button
                   onClick={handleStartQuiz}
@@ -170,9 +268,11 @@ export default function Header() {
                 {isAuthenticated && user && (
                   <div className="flex items-center space-x-3">
                     <UserAvatar user={user} />
-                    <span className="text-sm font-medium text-gray-700">
-                      {user.displayName || user.username}
-                    </span>
+                    <div className="flex flex-col">
+                      <span className="text-sm font-medium text-gray-700">
+                        {user.displayName || user.username}
+                      </span>
+                    </div>
                   </div>
                 )}
                 <AuthButtons />
@@ -192,12 +292,25 @@ export default function Header() {
                   {isAuthenticated && user && (
                     <div className="flex items-center space-x-3 pb-3 border-b border-gray-200 mb-3">
                       <UserAvatar user={user} />
-                      <span className="text-sm font-medium text-gray-700">
-                        {user.displayName || user.username}
-                      </span>
+                      <div className="flex flex-col">
+                        <span className="text-sm font-medium text-gray-700">
+                          {user.displayName || user.username}
+                        </span>
+                        {formatPremiumDisplay() && (
+                          <div className="flex items-center space-x-1">
+                            <Calendar className="h-3 w-3 text-yellow-500" />
+                            <span className={`text-xs font-medium ${formatPremiumDisplay()!.isExpiringSoon
+                                ? 'text-red-600'
+                                : 'text-yellow-600'
+                              }`}>
+                              Premium {formatPremiumDisplay()!.text} dias
+                            </span>
+                          </div>
+                        )}
+                      </div>
                     </div>
                   )}
-                  
+
                   <Button
                     variant="ghost"
                     onClick={() => {
@@ -209,6 +322,20 @@ export default function Header() {
                     <Trophy className="mr-2 h-4 w-4" />
                     Ranking
                   </Button>
+
+                  {shouldShowPremiumButton() && (
+                    <Button
+                      variant="ghost"
+                      onClick={() => {
+                        setLocation("/premium");
+                        setIsMenuOpen(false);
+                      }}
+                      className="text-yellow-600 hover:text-yellow-700 w-full"
+                    >
+                      <Crown className="mr-2 h-4 w-4" />
+                      Premium
+                    </Button>
+                  )}
 
                   {location !== "/quiz" && !location.includes("results") && (
                     <Button
@@ -240,6 +367,13 @@ export default function Header() {
         onAuth={handleAuth}
         loading={isLoading}
         error={authError}
+      />
+      
+      {/* Premium Required Alert */}
+      <PremiumRequiredAlert 
+        isOpen={showPremiumAlert}
+        onClose={() => setShowPremiumAlert(false)}
+        message={premiumAlertMessage}
       />
     </>
   );

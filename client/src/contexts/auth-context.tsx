@@ -6,7 +6,8 @@ import { useAuthNotifications } from '../hooks/use-auth-notifications';
 interface User {
   id: string;
   email: string;
-  username: string;
+  username: string | null;
+  phone?: string | null;
   displayName?: string;
   avatar?: string;
   role: 'admin' | 'user';
@@ -18,8 +19,9 @@ interface User {
 interface AuthContextType {
   user: User | null;
   token: string | null;
-  login: (email: string, password: string) => Promise<void>;
+  login: (email: string, password: string) => Promise<{ requiresAdditionalInfo?: boolean; needsPhone?: boolean; needsUsername?: boolean; email?: string }>;
   loginWithGoogle: (googleToken: string) => Promise<{ requiresAdditionalInfo?: boolean; needsPhone?: boolean; needsUsername?: boolean; email?: string }>;
+  completeUserProfile: (data: { email: string; phone?: string; username?: string }) => Promise<void>;
   completeGoogleAuth: (data: { email: string; phone?: string; username?: string }) => Promise<void>;
   sendVerificationEmailWithUserData: (email: string, userData: any) => Promise<void>;
   verifyEmail: (email: string, code: string) => Promise<void>;
@@ -41,7 +43,6 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
   const isAuthenticated = !!token && !!user;
   const isAdmin = user?.role === 'admin';
 
-  // Simple JWT decode function (for demo purposes)
   const decodeToken = (token: string) => {
     try {
       const payload = JSON.parse(atob(token.split('.')[1]));
@@ -51,7 +52,6 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     }
   };
 
-  // Check for existing token on mount
   useEffect(() => {
     const savedToken = localStorage.getItem('authToken');
     const savedUser = localStorage.getItem('authUser');
@@ -61,7 +61,6 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
       if (decoded && decoded.exp > Date.now() / 1000) {
         setToken(savedToken);
         
-        // Try to load full user data from localStorage first
         if (savedUser) {
           try {
             const userData = JSON.parse(savedUser);
@@ -85,7 +84,6 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
           });
         }
       } else {
-        // Token expired, remove it
         localStorage.removeItem('authToken');
         localStorage.removeItem('authUser');
       }
@@ -111,24 +109,38 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
 
       const data = await response.json();
       
+      const needsUsername = !data.user.username;
+      const needsPhone = !data.user.phone;
+      const requiresAdditionalInfo = needsUsername || needsPhone;
+      
+      if (requiresAdditionalInfo) {
+        return {
+          requiresAdditionalInfo: true,
+          needsUsername,
+          needsPhone,
+          email: data.user.email
+        };
+      }
+      
       setToken(data.token);
       localStorage.setItem('authToken', data.token);
       
-      // Decode user info from token
-      const decoded = decodeToken(data.token);
-      if (decoded) {
-        const userData = {
-          id: decoded.id,
-          email: decoded.email,
-          username: decoded.username,
-          role: decoded.role || 'user',
-          isPremium: false
-        };
-        setUser(userData);
-        localStorage.setItem('authUser', JSON.stringify(userData));
-        
-        showLoginSuccess(userData.username);
-      }
+      const userData = {
+        id: data.user.id,
+        email: data.user.email,
+        username: data.user.username,
+        phone: data.user.phone,
+        displayName: data.user.displayName,
+        avatar: data.user.avatar,
+        role: data.user.role || 'user',
+        isPremium: false
+      };
+      setUser(userData);
+      localStorage.setItem('authUser', JSON.stringify(userData));
+      
+      showLoginSuccess(userData.username || userData.email);
+      
+      return {};
     } catch (error) {
       console.error('Login error:', error);
       throw error;
@@ -185,6 +197,39 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
       return {};
     } catch (error) {
       console.error('Google login error:', error);
+      throw error;
+    } finally {
+      setIsLoading(false);
+    }
+  };
+
+  const completeUserProfile = async (data: { email: string; phone?: string; username?: string }) => {
+    setIsLoading(true);
+    try {
+      const response = await fetch(`${API_BASE_URL}/api/user/complete-profile`, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify(data),
+      });
+
+      if (!response.ok) {
+        const error = await response.json();
+        throw new Error(error.message || 'Erro ao completar perfil');
+      }
+
+      const result = await response.json();
+      
+      setToken(result.token);
+      localStorage.setItem('authToken', result.token);
+      setUser(result.user);
+      localStorage.setItem('authUser', JSON.stringify(result.user));
+      
+      showLoginSuccess(result.user.username || result.user.email);
+      
+    } catch (error) {
+      console.error('Complete user profile error:', error);
       throw error;
     } finally {
       setIsLoading(false);
@@ -275,6 +320,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
         token,
         login,
         loginWithGoogle,
+        completeUserProfile,
         completeGoogleAuth,
         sendVerificationEmailWithUserData,
         verifyEmail,

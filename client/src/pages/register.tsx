@@ -10,28 +10,20 @@ import { Loader2, Eye, EyeOff } from "lucide-react";
 import { GoogleLoginButton } from "../components/auth/google-login-button";
 import { CompleteProfileModal } from "../components/auth/complete-profile-modal";
 import { EmailVerificationModal } from "../components/auth/email-verification-modal";
+import { useAuth } from "../contexts/auth-context";
 
 export default function RegisterContent() {
     const [message, setMessage] = useState<string | null>(null);
     const [isLoading, setIsLoading] = useState(false);
     const [isSuccess, setIsSuccess] = useState(false);
     const [, setLocation] = useLocation();
-    const [username, setUsername] = useState('');
     const [password, setPassword] = useState('');
     const [confirmPassword, setConfirmPassword] = useState('');
     const [showPassword, setShowPassword] = useState(false);
     const [showConfirmPassword, setShowConfirmPassword] = useState(false);
     const [passwordError, setPasswordError] = useState('');
+    const { completeUserProfile } = useAuth();
     
-    const handleUsernameChange = (e: React.ChangeEvent<HTMLInputElement>) => {
-        const value = e.target.value;
-        const formattedValue = value
-            .replace(/\s+/g, '')
-            .replace(/[^a-zA-Z0-9._]/g, '')
-            .toLowerCase();
-        setUsername(formattedValue);
-    };
-
     const handlePasswordChange = (e: React.ChangeEvent<HTMLInputElement>) => {
         const value = e.target.value;
         setPassword(value);
@@ -89,6 +81,7 @@ export default function RegisterContent() {
         email: string;
         needsPhone?: boolean;
         needsUsername?: boolean;
+        isOAuth?: boolean;
     } | null>(null);
     
     async function handleSubmit(e: React.FormEvent){
@@ -117,11 +110,15 @@ export default function RegisterContent() {
                 
                 if (result.requiresEmailVerification) {
                     setUserRegistrationData({
-                        username: data.username,
                         email: data.email,
                         passwordHash: result.passwordHash
                     });
-                    setOauthData({ email: data.email as string });
+                    setOauthData({ 
+                        email: data.email as string,
+                        needsPhone: true,
+                        needsUsername: true,
+                        isOAuth: false
+                    });
                     setShowEmailVerification(true);
                 } else {
                     setTimeout(() => {
@@ -142,7 +139,10 @@ export default function RegisterContent() {
     };
 
     const handleGoogleRequiresInfo = (data: { email: string; needsPhone?: boolean; needsUsername?: boolean }) => {
-        setOauthData(data);
+        setOauthData({
+            ...data,
+            isOAuth: true
+        });
         if (data.needsPhone || data.needsUsername) {
             setShowCompleteProfile(true);
         } else {
@@ -155,9 +155,27 @@ export default function RegisterContent() {
         setLocation('/quiz');
     };
 
+    const customCompleteProfile = async (profileData: { username?: string; phone?: string }) => {
+        await completeUserProfile({
+            email: oauthData!.email,
+            ...profileData
+        });
+    };
+
     const handleEmailVerified = () => {
         setShowEmailVerification(false);
-        setLocation('/login');
+        
+        if (userRegistrationData?.email) {
+            setOauthData({
+                email: userRegistrationData.email,
+                needsPhone: true,
+                needsUsername: true,
+                isOAuth: false
+            });
+            setShowCompleteProfile(true);
+        } else {
+            setLocation('/login');
+        }
     };
 
     return (
@@ -176,7 +194,7 @@ export default function RegisterContent() {
                     <CardHeader>
                         <CardTitle>Cadastro</CardTitle>
                         <CardDescription>
-                            Preencha os dados para criar sua conta
+                            Informações adicionais serão solicitadas após o cadastro
                         </CardDescription>
                     </CardHeader>
                     <CardContent>
@@ -192,24 +210,6 @@ export default function RegisterContent() {
                                     <AlertDescription>{passwordError}</AlertDescription>
                                 </Alert>
                             )}
-
-                            <div className="space-y-2">
-                                <Label htmlFor="username">Nome de usuário</Label>
-                                <Input
-                                    type="text"
-                                    name="username"
-                                    id="username"
-                                    value={username}
-                                    onChange={handleUsernameChange}
-                                    placeholder="ex: joaosilva123"
-                                    disabled={isLoading}
-                                    required
-                                    className="font-mono"
-                                />
-                                <p className="text-xs text-gray-500">
-                                    Apenas letras, números, pontos e underscores. Sem espaços.
-                                </p>
-                            </div>
 
                             <div className="space-y-2">
                                 <Label htmlFor="email">Email</Label>
@@ -359,6 +359,7 @@ export default function RegisterContent() {
                         email={oauthData.email}
                         needsPhone={oauthData.needsPhone}
                         needsUsername={oauthData.needsUsername}
+                        customSubmit={!oauthData.isOAuth ? customCompleteProfile : undefined}
                     />
                 )}
 

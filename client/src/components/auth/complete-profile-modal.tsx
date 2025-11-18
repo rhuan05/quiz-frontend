@@ -10,10 +10,11 @@ import { useAuth } from '../../contexts/auth-context';
 interface CompleteProfileModalProps {
   isOpen: boolean;
   onClose: () => void;
-  onComplete: () => void;
+  onComplete: (data?: { username?: string; phone?: string }) => void;
   email: string;
   needsPhone?: boolean;
   needsUsername?: boolean;
+  customSubmit?: (data: { username?: string; phone?: string }) => Promise<void>;
 }
 
 export function CompleteProfileModal({ 
@@ -22,7 +23,8 @@ export function CompleteProfileModal({
   onComplete, 
   email, 
   needsPhone, 
-  needsUsername 
+  needsUsername,
+  customSubmit 
 }: CompleteProfileModalProps) {
   const [username, setUsername] = useState('');
   const [phone, setPhone] = useState('');
@@ -91,13 +93,21 @@ export function CompleteProfileModal({
     setIsLoading(true);
     
     try {
-      await completeGoogleAuth({
-        email,
+      const profileData = {
         ...(needsUsername && { username }),
         ...(needsPhone && { phone }),
-      });
+      };
 
-      onComplete();
+      if (customSubmit) {
+        await customSubmit(profileData);
+      } else {
+        await completeGoogleAuth({
+          email,
+          ...profileData,
+        });
+      }
+
+      onComplete(profileData);
       onClose();
     } catch (error: any) {
       console.error('Complete profile error:', error);

@@ -3,6 +3,8 @@ import { Dialog, DialogContent, DialogHeader, DialogTitle } from '../ui/dialog';
 import { Button } from '../ui/button';
 import { Alert, AlertDescription } from '../ui/alert';
 import { Loader2, ChevronRight, BookOpen, Target, Zap } from 'lucide-react';
+import { PremiumRequiredAlert } from './premium-required-alert';
+import { usePremiumCheck } from '../../hooks/use-premium-check';
 import { API_BASE_URL } from '../../../../config.json';
 
 interface Category {
@@ -51,12 +53,16 @@ export function CategoryTopicDifficultyModal({
   const [selectedCategory, setSelectedCategory] = useState<Category | null>(null);
   const [selectedTopic, setSelectedTopic] = useState<Topic | null>(null);
   const [selectedDifficulty, setSelectedDifficulty] = useState<Difficulty | null>(null);
+  const [showPremiumAlert, setShowPremiumAlert] = useState(false);
+  const [premiumAlertMessage, setPremiumAlertMessage] = useState('');
   
   const [categories, setCategories] = useState<Category[]>([]);
   const [difficulties, setDifficulties] = useState<Difficulty[]>([]);
   
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
+  
+  const { checkPremiumAccess } = usePremiumCheck();
 
   useEffect(() => {
     if (isOpen) {
@@ -120,10 +126,20 @@ export function CategoryTopicDifficultyModal({
     setStep('difficulty');
   };
 
-  const handleDifficultySelect = (difficulty: Difficulty) => {
+  const handleDifficultySelect = async (difficulty: Difficulty) => {
     setSelectedDifficulty(difficulty);
     
     if (selectedCategory && selectedTopic) {
+      const accessCheck = await checkPremiumAccess();
+      
+      if (!accessCheck.hasAccess) {
+        if (accessCheck.needsPremium) {
+          setPremiumAlertMessage(accessCheck.message || 'Premium necessário');
+          setShowPremiumAlert(true);
+        }
+        return;
+      }
+      
       onSelectionComplete(selectedCategory.id, selectedTopic.id, difficulty.id);
       onClose();
     }
@@ -310,6 +326,13 @@ export function CategoryTopicDifficultyModal({
             Cancelar
           </Button>
         </div>
+        
+        {/* Premium Required Alert */}
+        <PremiumRequiredAlert 
+          isOpen={showPremiumAlert}
+          onClose={() => setShowPremiumAlert(false)}
+          message={premiumAlertMessage}
+        />
       </DialogContent>
     </Dialog>
   );

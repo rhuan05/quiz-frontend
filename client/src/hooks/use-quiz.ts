@@ -84,6 +84,7 @@ export function useQuiz() {
           isCorrect: data.isCorrect,
           timeSpent: variables.timeSpent,
           feedbackData: data,
+          pointsEarned: data.pointsEarned || 1,
         },
       });
     },

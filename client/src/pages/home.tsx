@@ -4,9 +4,10 @@ import { Badge } from "../components/ui/badge";
 import LoadingOverlay from "../components/layout/loading-overlay";
 import { AuthModal } from "../components/auth/auth-modal";
 import { CategoryTopicDifficultyModal } from "../components/quiz/category-topic-difficulty-modal";
+import { PremiumRequiredAlert } from "../components/quiz/premium-required-alert";
 import { Rocket, Zap, TrendingUp, Smartphone, Code, Calendar, Lock, Check } from "lucide-react";
 import { useQuiz } from "../hooks/use-quiz";
-import { useQuizContext } from "../contexts/quiz-context";
+import { usePremiumCheck } from "../hooks/use-premium-check";
 import { useState, useEffect } from 'react';
 import { useLocation } from 'wouter';
 import { API_BASE_URL } from '../../../config.json';
@@ -40,22 +41,14 @@ interface Category {
   topics?: Topic[];
 }
 
-interface Difficulty {
-  id: string;
-  name: string;
-  label: string;
-  points: number;
-  color: string;
-  order: number;
-}
-
 export default function Home() {
-  const { startQuiz, startQuizWithSelection, isLoading, clearError } = useQuiz();
-  const { state: quizState } = useQuizContext();
+  const { startQuiz, startQuizWithSelection, isLoading } = useQuiz();
+  const { checkPremiumAccess } = usePremiumCheck();
   const [categories, setCategories] = useState<Category[]>([]);
-  const [difficulties, setDifficulties] = useState<Difficulty[]>([]);
   const [showAuthModal, setShowAuthModal] = useState(false);
   const [showCategoryModal, setShowCategoryModal] = useState(false);
+  const [showPremiumAlert, setShowPremiumAlert] = useState(false);
+  const [premiumAlertMessage, setPremiumAlertMessage] = useState('');
   const [selectedCategory, setSelectedCategory] = useState<Category | null>(null);
   const [authError, setAuthError] = useState<string>('');
   const [, setLocation] = useLocation();
@@ -63,7 +56,6 @@ export default function Home() {
 
   useEffect(() => {
     fetchCategories();
-    fetchDifficulties();
   }, []);
 
   const fetchCategories = async () => {
@@ -90,29 +82,6 @@ export default function Home() {
     }
   };
 
-  const fetchDifficulties = async () => {
-    try {
-      const response = await fetch(`${API_BASE_URL}/api/difficulties`);
-      if (response.ok) {
-        const data = await response.json();
-        setDifficulties(data);
-      } else {
-        setDifficulties([
-          { id: '379740f7-49ed-46e4-85e8-b655fce8fc7d', name: 'easy', label: 'Fácil', points: 10, color: '#22c55e', order: 1 },
-          { id: 'e15122fe-0d1b-485d-94ea-c95bc479ad30', name: 'medium', label: 'Médio', points: 20, color: '#f59e0b', order: 2 },
-          { id: '38ae9e44-2beb-4ef9-b160-cf5e2c5cf3bd', name: 'hard', label: 'Difícil', points: 30, color: '#ef4444', order: 3 }
-        ]);
-      }
-    } catch (error) {
-      console.error('Erro ao buscar dificuldades:', error);
-      setDifficulties([
-        { id: '379740f7-49ed-46e4-85e8-b655fce8fc7d', name: 'easy', label: 'Fácil', points: 10, color: '#22c55e', order: 1 },
-        { id: 'e15122fe-0d1b-485d-94ea-c95bc479ad30', name: 'medium', label: 'Médio', points: 20, color: '#f59e0b', order: 2 },
-        { id: '38ae9e44-2beb-4ef9-b160-cf5e2c5cf3bd', name: 'hard', label: 'Difícil', points: 30, color: '#ef4444', order: 3 }
-      ]);
-    }
-  };
-
   const getCategoryStatus = (category: Category) => {
     const now = new Date();
     const availableFrom = category.availableFrom ? new Date(category.availableFrom) : null;
@@ -135,11 +104,16 @@ export default function Home() {
     }).format(utcDate);
   };
 
-  const handleCategorySelect = (category: Category) => {
-    const token = localStorage.getItem("authToken");
+  const handleCategorySelect = async (category: Category) => {
+    const accessCheck = await checkPremiumAccess();
     
-    if (!token) {
-      setShowAuthModal(true);
+    if (!accessCheck.hasAccess) {
+      if (accessCheck.needsPremium) {
+        setPremiumAlertMessage(accessCheck.message || 'Premium necessário');
+        setShowPremiumAlert(true);
+      } else {
+        setShowAuthModal(true);
+      }
       return;
     }
     
@@ -148,6 +122,17 @@ export default function Home() {
   };
 
   const handleQuizSelection = async (categoryId: string, topicId: string, difficultyId: string) => {
+    const accessCheck = await checkPremiumAccess();
+    
+    if (!accessCheck.hasAccess) {
+      setShowCategoryModal(false);
+      if (accessCheck.needsPremium) {
+        setPremiumAlertMessage(accessCheck.message || 'Premium necessário');
+        setShowPremiumAlert(true);
+      }
+      return;
+    }
+
     try {      
       const result = await startQuizWithSelection(categoryId, topicId, difficultyId);
             
@@ -170,26 +155,31 @@ export default function Home() {
   const handleStartQuiz = async () => {
     setAuthError('');
 
-    const token = localStorage.getItem("authToken");
-
-    if (token) {
-      try {
-        await startQuiz("JavaScript"); // Categoria padrão
-        setTimeout(() => {
-          setLocation('/quiz');
-        }, 10)
-      } catch (error) {
-        console.error('Erro ao iniciar quiz:', error);
+    const accessCheck = await checkPremiumAccess();
+    
+    if (!accessCheck.hasAccess) {
+      if (accessCheck.needsPremium) {
+        setPremiumAlertMessage(accessCheck.message || 'Premium necessário');
+        setShowPremiumAlert(true);
+      } else {
+        setShowAuthModal(true);
       }
-    } else {
-      setShowAuthModal(true);
+      return;
     }
 
+    try {
+      await startQuiz("JavaScript");
+      setTimeout(() => {
+        setLocation('/quiz');
+      }, 10)
+    } catch (error) {
+      console.error('Erro ao iniciar quiz:', error);
+    }
   };
 
   const handleAuth = async (_email: string, _password: string) => {
     try {
-      setAuthError(''); // Limpar erros anteriores
+      setAuthError('');
 
       const sessionToken = await startQuiz("JavaScript"); // Categoria padrão
 
@@ -199,7 +189,6 @@ export default function Home() {
 
       await new Promise(resolve => setTimeout(resolve, 50));
 
-      // Fechar modal
       setShowAuthModal(false);
 
       setLocation('/quiz');
@@ -268,13 +257,8 @@ export default function Home() {
               <Button
                 variant="outline"
                 onClick={() => {
-                  const token = localStorage.getItem("authToken");
-                  if (!token) {
-                    setShowAuthModal(true);
-                  } else {
-                    setSelectedCategory(null);
-                    setShowCategoryModal(true);
-                  }
+                  setSelectedCategory(null);
+                  setShowCategoryModal(true);
                 }}
                 disabled={isLoading}
                 className="px-8 py-4 text-lg font-semibold border-2 hover:bg-gray-50 transition-all duration-300"
@@ -452,12 +436,9 @@ export default function Home() {
       {/* Authentication Modal */}
       <AuthModal
         isOpen={showAuthModal}
-        onClose={() => {
-          setShowAuthModal(false);
-          setAuthError('');
-        }}
+        onClose={() => setShowAuthModal(false)}
         onAuth={handleAuth}
-        loading={isLoading}
+        loading={false}
         error={authError}
       />
 
@@ -467,10 +448,16 @@ export default function Home() {
         onClose={() => {
           setShowCategoryModal(false);
           setSelectedCategory(null);
-          clearError();
         }}
         onSelectionComplete={handleQuizSelection}
-        selectedCategory={selectedCategory}
+        selectedCategory={selectedCategory as any}
+      />
+      
+      {/* Premium Required Alert */}
+      <PremiumRequiredAlert 
+        isOpen={showPremiumAlert}
+        onClose={() => setShowPremiumAlert(false)}
+        message={premiumAlertMessage}
       />
     </>
   );

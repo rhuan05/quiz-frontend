@@ -55,6 +55,13 @@ export default function Results() {
   const performanceLevel = (results as any)?.performanceLevel || 'Iniciante';
   const averageTime = (results as any)?.averageTime || 0;
   const categoryBreakdown = (results as any)?.categoryBreakdown || {};
+  
+  const totalPossiblePoints = session.totalPossiblePoints || session.totalQuestions || 10;
+  const totalEarnedPoints = session.totalEarnedPoints || session.correctAnswers || 0;
+  
+  const totalQuestionsAnswered = session.answers?.length || session.totalQuestions || 10;
+  
+  const realScore = totalPossiblePoints > 0 ? (totalEarnedPoints / totalPossiblePoints) * 100 : 0;
 
   const formatTime = (seconds: number) => {
     const mins = Math.floor(seconds / 60);
@@ -96,15 +103,15 @@ export default function Results() {
             <CardContent className="p-8">
               <div className="grid grid-cols-1 md:grid-cols-3 gap-8 text-center">
                 <div>
-                  <div className="text-5xl font-bold text-primary mb-2">{Math.round(session.score)}%</div>
+                  <div className="text-5xl font-bold text-primary mb-2">{Math.round(realScore)}%</div>
                   <div className="text-lg font-semibold text-gray-900 mb-1">Pontuação Final</div>
-                  <div className="text-sm text-gray-500">{session.correctAnswers} de {session.totalQuestions} pontos</div>
+                  <div className="text-sm text-gray-500">{totalEarnedPoints} de {totalPossiblePoints} pontos</div>
                 </div>
                 
                 <div>
                   <div className="text-5xl font-bold text-green-600 mb-2">{session.correctAnswers}</div>
                   <div className="text-lg font-semibold text-gray-900 mb-1">Acertos</div>
-                  <div className="text-sm text-gray-500">de {session.totalQuestions} perguntas</div>
+                  <div className="text-sm text-gray-500">de {totalQuestionsAnswered} perguntas</div>
                 </div>
                 
                 <div>
@@ -248,7 +255,7 @@ export default function Results() {
       {/* Share Modal */}
       {showShareModal && (
         <ShareModal
-          score={Math.round(session.score)}
+          score={Math.round(realScore)}
           performanceLevel={performanceLevel}
           onClose={() => setShowShareModal(false)}
         />
