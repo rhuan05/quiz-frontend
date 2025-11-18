@@ -15,7 +15,7 @@ export default function Login() {
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
   const [error, setError] = useState('');
-  const { login, isLoading } = useAuth();
+  const { login, isLoading, completeUserProfile } = useAuth();
   const [, setLocation] = useLocation();
   
   const [showCompleteProfile, setShowCompleteProfile] = useState(false);
@@ -24,6 +24,7 @@ export default function Login() {
     email: string;
     needsPhone?: boolean;
     needsUsername?: boolean;
+    isOAuth?: boolean;
   } | null>(null);
 
   const handleSubmit = async (e: React.FormEvent) => {
@@ -36,7 +37,19 @@ export default function Login() {
     }
 
     try {
-      await login(email, password);
+      const loginResult = await login(email, password);
+      
+      if (loginResult.requiresAdditionalInfo) {
+        setOauthData({
+          email: loginResult.email!,
+          needsPhone: loginResult.needsPhone,
+          needsUsername: loginResult.needsUsername,
+          isOAuth: false
+        });
+        setShowCompleteProfile(true);
+        return;
+      }
+      
       setLocation('/quiz');
     } catch (err: any) {
       setError(err.message || 'Erro ao fazer login. Tente novamente.');
@@ -48,7 +61,10 @@ export default function Login() {
   };
 
   const handleGoogleRequiresInfo = (data: { email: string; needsPhone?: boolean; needsUsername?: boolean }) => {
-    setOauthData(data);
+    setOauthData({
+      ...data,
+      isOAuth: true
+    });
     if (data.needsPhone || data.needsUsername) {
       setShowCompleteProfile(true);
     } else {
@@ -59,6 +75,13 @@ export default function Login() {
   const handleCompleteProfile = () => {
     setShowCompleteProfile(false);
     setLocation('/quiz');
+  };
+
+  const customCompleteProfile = async (profileData: { username?: string; phone?: string }) => {
+    await completeUserProfile({
+      email: oauthData!.email,
+      ...profileData
+    });
   };
 
   const handleEmailVerified = () => {
@@ -176,6 +199,7 @@ export default function Login() {
             email={oauthData.email}
             needsPhone={oauthData.needsPhone}
             needsUsername={oauthData.needsUsername}
+            customSubmit={!oauthData.isOAuth ? customCompleteProfile : undefined}
           />
         )}
 

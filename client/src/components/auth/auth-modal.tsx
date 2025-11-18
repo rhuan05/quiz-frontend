@@ -24,36 +24,11 @@ export function AuthModal({ isOpen, onClose }: AuthModalProps) {
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
   const [confirmPassword, setConfirmPassword] = useState('');
-  const [username, setUsername] = useState('');
-  const [phone, setPhone] = useState('');
   const [showPassword, setShowPassword] = useState(false);
 
-  const formatPhone = (value: string) => {
-    const numbers = value.replace(/\D/g, '');
-    if (numbers.length <= 11) {
-      return numbers
-        .replace(/(\d{2})(\d)/, '($1) $2')
-        .replace(/(\d{5})(\d)/, '$1-$2');
-    }
-    return value;
-  };
-
-  const handlePhoneChange = (e: React.ChangeEvent<HTMLInputElement>) => {
-    const formatted = formatPhone(e.target.value);
-    setPhone(formatted);
-  };
-
-  const handleUsernameChange = (e: React.ChangeEvent<HTMLInputElement>) => {
-    const value = e.target.value;
-    const formattedValue = value
-      .replace(/\s+/g, '')
-      .replace(/[^a-zA-Z0-9._]/g, '')
-      .toLowerCase();
-    setUsername(formattedValue);
-  };
   const [isLogin, setIsLogin] = useState(true);
   const [formErrors, setFormErrors] = useState<{username?: string, phone?: string, email?: string; password?: string; confirmPassword?: string}>({});
-  const { login } = useAuth();
+  const { login, completeUserProfile, completeGoogleAuth } = useAuth();
   const [message, setMessage] = useState<string | null>(null);
   const [isSuccess, setIsSuccess] = useState(false);
   const [isLoading, setIsLoading] = useState(false);
@@ -66,6 +41,7 @@ export function AuthModal({ isOpen, onClose }: AuthModalProps) {
     email: string;
     needsPhone?: boolean;
     needsUsername?: boolean;
+    isOAuth?: boolean;
   } | null>(null);
   const [, setRequiresEmailVerification] = useState(false);
 
@@ -87,16 +63,6 @@ export function AuthModal({ isOpen, onClose }: AuthModalProps) {
     }
 
     if (!isLogin) {
-      if (!username.trim()) {
-        newErrors.username = 'Nome de usuário é obrigatório';
-      }
-
-      if (!phone.trim()) {
-        newErrors.phone = 'Telefone é obrigatório';
-      } else if (phone.replace(/\D/g, '').length !== 11) {
-        newErrors.phone = 'Telefone deve ter 11 dígitos (com DDD)';
-      }
-
       if (!confirmPassword.trim()) {
         newErrors.confirmPassword = 'Confirme sua senha';
       } else if (password !== confirmPassword) {
@@ -121,7 +87,18 @@ export function AuthModal({ isOpen, onClose }: AuthModalProps) {
         const token = localStorage.getItem('authToken');
         
         if (!token) {
-          await login(email, password);
+          const loginResult = await login(email, password);
+          
+          if (loginResult.requiresAdditionalInfo) {
+            setOauthData({
+              email: loginResult.email!,
+              needsPhone: loginResult.needsPhone,
+              needsUsername: loginResult.needsUsername,
+              isOAuth: false
+            });
+            setShowCompleteProfile(true);
+            return;
+          }
         }
 
         onClose();
@@ -152,19 +129,20 @@ export function AuthModal({ isOpen, onClose }: AuthModalProps) {
             setIsSuccess(true);
             
             if (result.requiresEmailVerification) {
-              // Guardar dados do usuário para reenvio de código
               setUserRegistrationData({
-                username: data.username,
                 email: data.email,
-                phone: data.phone,
                 passwordHash: result.passwordHash
               });
               setRequiresEmailVerification(true);
               setShowEmailVerification(true);
             } else {
-              setTimeout(() => {
-                setIsLogin(!isLogin);
-              }, 2000);
+              setOauthData({
+                email: data.email as string,
+                needsPhone: true,
+                needsUsername: true,
+                isOAuth: false
+              });
+              setShowCompleteProfile(true);
             }
         }
       } catch (error: any) {
@@ -181,8 +159,6 @@ export function AuthModal({ isOpen, onClose }: AuthModalProps) {
       setEmail('');
       setPassword('');
       setConfirmPassword('');
-      setUsername('');
-      setPhone('');
       setFormErrors({});
       setShowPassword(false);
       setIsLogin(true);
@@ -201,7 +177,10 @@ export function AuthModal({ isOpen, onClose }: AuthModalProps) {
   };
 
   const handleGoogleRequiresInfo = (data: { email: string; needsPhone?: boolean; needsUsername?: boolean }) => {
-    setOauthData(data);
+    setOauthData({
+      ...data,
+      isOAuth: true
+    });
     if (data.needsPhone || data.needsUsername) {
       setShowCompleteProfile(true);
     } else {
@@ -209,17 +188,41 @@ export function AuthModal({ isOpen, onClose }: AuthModalProps) {
     }
   };
 
-  const handleCompleteProfile = () => {
+  const handleCompleteProfile = (_profileData?: { username?: string; phone?: string }) => {
     setShowCompleteProfile(false);
     handleStartQuizAfterAuth();
+  };
+
+  const customCompleteProfile = async (profileData: { username?: string; phone?: string }) => {
+    if (oauthData?.isOAuth) {
+      await completeGoogleAuth({
+        email: oauthData.email,
+        ...profileData
+      });
+    } else {
+      await completeUserProfile({
+        email: oauthData!.email,
+        ...profileData
+      });
+    }
   };
 
   const handleEmailVerified = () => {
     setShowEmailVerification(false);
     setRequiresEmailVerification(false);
-    setMessage("Email verificado com sucesso! Faça login para continuar.");
-    setIsSuccess(true);
-    setIsLogin(true);
+    
+    if (userRegistrationData?.email) {
+      setOauthData({
+        email: userRegistrationData.email,
+        needsPhone: true,
+        needsUsername: true
+      });
+      setShowCompleteProfile(true);
+    } else {
+      setMessage("Email verificado com sucesso! Faça login para continuar.");
+      setIsSuccess(true);
+      setIsLogin(true);
+    }
   };
 
   const handleStartQuizAfterAuth = async () => {
@@ -256,49 +259,6 @@ export function AuthModal({ isOpen, onClose }: AuthModalProps) {
               </AlertDescription>
             </Alert>
           )}
-
-          {/* Campo Nome de Usuário */}
-          { !isLogin ? <div className="space-y-2">
-              <Label htmlFor="username">Nome de usuário</Label>
-              <Input
-                  type="text"
-                  name="username"
-                  id="username"
-                  placeholder="ex: joaosilva123"
-                  disabled={loading}
-                  value={username}
-                  onChange={handleUsernameChange}
-                  className={`font-mono ${formErrors.username ? 'border-red-500 focus:border-red-500' : ''}`}
-              />
-              {formErrors.username && (
-                <p className="text-sm text-red-600">{formErrors.username}</p>
-              )}
-              <p className="text-xs text-gray-500">
-                Apenas letras, números, pontos e underscores. Sem espaços.
-              </p>
-          </div> : <></>}
-
-          {/* Campo Telefone */}
-          { !isLogin ? <div className="space-y-2">
-              <Label htmlFor="phone">Telefone</Label>
-              <Input
-                  type="tel"
-                  name="phone"
-                  id="phone"
-                  placeholder="(11) 99999-9999"
-                  disabled={loading}
-                  value={phone}
-                  onChange={handlePhoneChange}
-                  maxLength={15}
-                  className={formErrors.phone ? 'border-red-500 focus:border-red-500' : ''}
-              />
-              {formErrors.phone && (
-                <p className="text-sm text-red-600">{formErrors.phone}</p>
-              )}
-              <p className="text-xs text-gray-500">
-                Digite seu telefone com DDD (11 dígitos).
-              </p>
-          </div> : <></>}
 
           {/* Campo Email */}
           <div className="space-y-2">
@@ -381,14 +341,14 @@ export function AuthModal({ isOpen, onClose }: AuthModalProps) {
             <div className="text-sm text-gray-600 space-y-1">
               <p>• Crie uma conta para salvar seu progresso</p>
               <p>• Senha deve ter pelo menos 6 caracteres</p>
-              <p>• Seus resultados ficarão salvos para sempre</p>
+              <p>• Informações adicionais serão solicitadas após o cadastro</p>
             </div>
           )}
 
           <div className="space-y-3">
             <Button
               type="submit"
-              disabled={loading || !email.trim() || !password.trim() || (!isLogin && (!username.trim() || !phone.trim()))}
+              disabled={loading || !email.trim() || !password.trim()}
               className="w-full"
             >
               {loading ? (
@@ -441,6 +401,7 @@ export function AuthModal({ isOpen, onClose }: AuthModalProps) {
           email={oauthData.email}
           needsPhone={oauthData.needsPhone}
           needsUsername={oauthData.needsUsername}
+          customSubmit={!oauthData.isOAuth ? customCompleteProfile : undefined}
         />
       )}
 

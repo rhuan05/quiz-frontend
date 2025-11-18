@@ -146,7 +146,7 @@ export default function Quiz() {
           isCorrect={feedbackData.isCorrect}
           correctOption={feedbackData.correctOption}
           explanation={feedbackData.explanation}
-          pointsEarned={feedbackData.isCorrect ? 100 : 0}
+          pointsEarned={feedbackData.pointsEarned || 0}
           onNext={handleNextQuestion}
           isLastQuestion={currentQuestionIndex >= questions.length - 1}
         />
