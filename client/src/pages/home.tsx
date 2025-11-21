@@ -382,13 +382,6 @@ export default function Home() {
             })}
             </div>
           )}
-
-          <div className="text-center mt-12">
-            <p className="text-gray-500 mb-4">Não encontrou sua tecnologia favorita?</p>
-            <Button variant="outline" className="text-primary border-primary hover:bg-primary hover:text-white">
-              Sugerir Nova Categoria
-            </Button>
-          </div>
         </div>
       </section>
 
