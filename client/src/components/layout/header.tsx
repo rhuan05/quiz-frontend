@@ -129,7 +129,7 @@ export default function Header() {
   };
 
   const shouldShowPremiumButton = () => {
-    if (!isAuthenticated) return false;
+    if (!isAuthenticated) return true;
     if (!premiumStatus) return true;
     if (!premiumStatus.isPremium) return true;
     return premiumStatus.daysRemaining === 0;
@@ -234,7 +234,7 @@ export default function Header() {
               {shouldShowPremiumButton() && (
                 <Button
                   variant="ghost"
-                  onClick={() => setLocation("/premium")}
+                  onClick={() => setLocation(isAuthenticated ? "/premium" : "/register")}
                   className="text-yellow-600 hover:text-yellow-700"
                 >
                   <Crown className="mr-2 h-4 w-4" />
@@ -327,7 +327,7 @@ export default function Header() {
                     <Button
                       variant="ghost"
                       onClick={() => {
-                        setLocation("/premium");
+                        setLocation(isAuthenticated ? "/premium" : "/register");
                         setIsMenuOpen(false);
                       }}
                       className="text-yellow-600 hover:text-yellow-700 w-full"
