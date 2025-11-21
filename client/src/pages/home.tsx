@@ -342,9 +342,6 @@ export default function Home() {
                         <h4 className="text-lg font-semibold text-gray-900 group-hover:text-primary transition-colors">
                           {category.name}
                         </h4>
-                        <p className="text-xs text-gray-500">
-                          Ordem: {category.order}
-                        </p>
                       </div>
                     </div>
 
