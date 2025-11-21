@@ -19,6 +19,7 @@ const UserAvatar = ({ user }: { user: any }) => {
   const [imageError, setImageError] = useState(false);
   const [imageLoading, setImageLoading] = useState(true);
 
+
   useEffect(() => {
     setImageError(false);
     setImageLoading(true);
@@ -129,7 +130,7 @@ export default function Header() {
   };
 
   const shouldShowPremiumButton = () => {
-    if (!isAuthenticated) return false;
+    if (!isAuthenticated) return true;
     if (!premiumStatus) return true;
     if (!premiumStatus.isPremium) return true;
     return premiumStatus.daysRemaining === 0;
@@ -234,7 +235,7 @@ export default function Header() {
               {shouldShowPremiumButton() && (
                 <Button
                   variant="ghost"
-                  onClick={() => setLocation("/premium")}
+                  onClick={() => setLocation(isAuthenticated ? "/premium" : "/register")}
                   className="text-yellow-600 hover:text-yellow-700"
                 >
                   <Crown className="mr-2 h-4 w-4" />
@@ -268,6 +269,11 @@ export default function Header() {
                 {isAuthenticated && user && (
                   <div className="flex items-center space-x-3">
                     <UserAvatar user={user} />
+                    <div className="flex flex-col">
+                      <span className="text-sm font-medium text-gray-700">
+                        {user.displayName || user.username}
+                      </span>
+                    </div>
                     <div className="flex flex-col">
                       <span className="text-sm font-medium text-gray-700">
                         {user.displayName || user.username}
@@ -308,6 +314,22 @@ export default function Header() {
                           </div>
                         )}
                       </div>
+                      <div className="flex flex-col">
+                        <span className="text-sm font-medium text-gray-700">
+                          {user.displayName || user.username}
+                        </span>
+                        {formatPremiumDisplay() && (
+                          <div className="flex items-center space-x-1">
+                            <Calendar className="h-3 w-3 text-yellow-500" />
+                            <span className={`text-xs font-medium ${formatPremiumDisplay()!.isExpiringSoon
+                                ? 'text-red-600'
+                                : 'text-yellow-600'
+                              }`}>
+                              Premium {formatPremiumDisplay()!.text} dias
+                            </span>
+                          </div>
+                        )}
+                      </div>
                     </div>
                   )}
 
@@ -327,7 +349,7 @@ export default function Header() {
                     <Button
                       variant="ghost"
                       onClick={() => {
-                        setLocation("/premium");
+                        setLocation(isAuthenticated ? "/premium" : "/register");
                         setIsMenuOpen(false);
                       }}
                       className="text-yellow-600 hover:text-yellow-700 w-full"
@@ -367,6 +389,13 @@ export default function Header() {
         onAuth={handleAuth}
         loading={isLoading}
         error={authError}
+      />
+      
+      {/* Premium Required Alert */}
+      <PremiumRequiredAlert 
+        isOpen={showPremiumAlert}
+        onClose={() => setShowPremiumAlert(false)}
+        message={premiumAlertMessage}
       />
       
       {/* Premium Required Alert */}

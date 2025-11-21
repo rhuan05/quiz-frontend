@@ -87,7 +87,7 @@ export default function PremiumPage(): React.ReactElement {
 
     try {
       const response = await apiRequest('POST', '/api/payments/pix', { 
-        amount: 24.90,
+        amount: 19.90,
         payer: {
           email: user?.email
         }
@@ -238,12 +238,26 @@ export default function PremiumPage(): React.ReactElement {
           <CardContent className="space-y-6">
             {/* Price Section */}
             <div className="text-center">
-              <div className="text-4xl font-bold text-purple-600 mb-2">
-                R$ 24,90
-                <span className="text-lg font-normal text-gray-600 ml-2">por 30 dias</span>
+              <div className="space-y-2">
+                {/* Preço original riscado */}
+                <div className="text-2xl font-bold text-gray-400 line-through">
+                  R$ 29,90
+                </div>
+                
+                {/* Preço promocional */}
+                <div className="text-4xl font-bold text-purple-600 mb-2">
+                  R$ 19,90
+                  <span className="text-lg font-normal text-gray-600 ml-2">por 30 dias</span>
+                </div>
+                
+                {/* Badge promocional */}
+                <div className="inline-flex items-center px-3 py-1 rounded-full text-sm font-medium bg-red-100 text-red-800">
+                  🔥 Promoção até 01/01/2026
+                </div>
               </div>
-              <p className="text-sm text-gray-600">
-                Cobrança única por 30 dias de acesso
+              
+              <p className="text-sm text-gray-600 mt-2">
+                Cobrança única por 30 dias de acesso • A partir de 01/01/2026: R$ 29,90
               </p>
             </div>
 
@@ -344,7 +358,7 @@ export default function PremiumPage(): React.ReactElement {
               {premiumStatus?.isPremium ? 'Renovar Premium' : 'Ativar Premium'}
             </CardTitle>
             <CardDescription>
-              30 dias de acesso premium por R$ 24,90
+              30 dias de acesso premium por R$ 19,90 (Promoção até 01/01/2026)
             </CardDescription>
           </CardHeader>
           <CardContent className="space-y-4">
@@ -401,7 +415,7 @@ export default function PremiumPage(): React.ReactElement {
                     ) : (
                       <>
                         <QrCode className="mr-2 h-4 w-4" />
-                        Gerar PIX - R$ 24,90
+                        Gerar PIX - R$ 19,90
                       </>
                     )}
                   </Button>
@@ -434,7 +448,7 @@ export default function PremiumPage(): React.ReactElement {
                   </div>
 
                   <p className="text-sm text-blue-700 mb-3">
-                    <strong>Valor: R$ {(24.90).toFixed(2)}</strong><br />
+                    <strong>Valor: R$ {(19.90).toFixed(2)}</strong><br />
                     {currentPayment.status === 'pending' && 'Use o QR Code ou copie o código PIX abaixo para efetuar o pagamento.'}
                     {currentPayment.status === 'approved' && 'Pagamento aprovado! Seu acesso premium foi ativado.'}
                     {currentPayment.status === 'failed' && 'Pagamento não foi aprovado. Tente novamente.'}
@@ -467,7 +481,7 @@ export default function PremiumPage(): React.ReactElement {
                           <li>Abra o app do seu banco</li>
                           <li>Escolha a opção PIX</li>
                           <li>Escaneie o QR Code ou cole o código abaixo</li>
-                          <li>Confirme o pagamento de R$ {(24.90).toFixed(2)}</li>
+                          <li>Confirme o pagamento de R$ {(19.90).toFixed(2)}</li>
                         </ol>
                       </div>
 

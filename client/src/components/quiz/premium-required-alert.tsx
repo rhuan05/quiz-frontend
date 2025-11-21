@@ -12,7 +12,7 @@ interface PremiumRequiredAlertProps {
 export function PremiumRequiredAlert({ 
   isOpen, 
   onClose, 
-  message = "Para iniciar o quiz e começar a pontuar você deve ser um usuário Premium. Conclua seu cadastro finalizando o pagamento de R$ 24,90 e comece a aprender!" 
+  message = "Para iniciar o quiz e começar a pontuar você deve ser um usuário Premium. Conclua seu cadastro finalizando o pagamento de R$ 19,90 e comece a aprender!" 
 }: PremiumRequiredAlertProps) {
   const [, setLocation] = useLocation();
 

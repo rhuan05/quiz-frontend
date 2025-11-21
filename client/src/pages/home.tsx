@@ -342,9 +342,6 @@ export default function Home() {
                         <h4 className="text-lg font-semibold text-gray-900 group-hover:text-primary transition-colors">
                           {category.name}
                         </h4>
-                        <p className="text-xs text-gray-500">
-                          Ordem: {category.order}
-                        </p>
                       </div>
                     </div>
 
@@ -385,13 +382,6 @@ export default function Home() {
             })}
             </div>
           )}
-
-          <div className="text-center mt-12">
-            <p className="text-gray-500 mb-4">Não encontrou sua tecnologia favorita?</p>
-            <Button variant="outline" className="text-primary border-primary hover:bg-primary hover:text-white">
-              Sugerir Nova Categoria
-            </Button>
-          </div>
         </div>
       </section>
 
