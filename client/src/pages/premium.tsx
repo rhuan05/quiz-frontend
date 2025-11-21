@@ -448,7 +448,7 @@ export default function PremiumPage(): React.ReactElement {
                   </div>
 
                   <p className="text-sm text-blue-700 mb-3">
-                    <strong>Valor: R$ {(24.90).toFixed(2)}</strong><br />
+                    <strong>Valor: R$ {(19.90).toFixed(2)}</strong><br />
                     {currentPayment.status === 'pending' && 'Use o QR Code ou copie o código PIX abaixo para efetuar o pagamento.'}
                     {currentPayment.status === 'approved' && 'Pagamento aprovado! Seu acesso premium foi ativado.'}
                     {currentPayment.status === 'failed' && 'Pagamento não foi aprovado. Tente novamente.'}
@@ -481,7 +481,7 @@ export default function PremiumPage(): React.ReactElement {
                           <li>Abra o app do seu banco</li>
                           <li>Escolha a opção PIX</li>
                           <li>Escaneie o QR Code ou cole o código abaixo</li>
-                          <li>Confirme o pagamento de R$ {(24.90).toFixed(2)}</li>
+                          <li>Confirme o pagamento de R$ {(19.90).toFixed(2)}</li>
                         </ol>
                       </div>
 
