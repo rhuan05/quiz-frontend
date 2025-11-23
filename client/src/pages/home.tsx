@@ -5,6 +5,7 @@ import LoadingOverlay from "../components/layout/loading-overlay";
 import { AuthModal } from "../components/auth/auth-modal";
 import { CategoryTopicDifficultyModal } from "../components/quiz/category-topic-difficulty-modal";
 import { PremiumRequiredAlert } from "../components/quiz/premium-required-alert";
+import { FreeLimitModal } from "../components/quiz/free-limit-modal";
 import { Rocket, Zap, TrendingUp, Smartphone, Code, Calendar, Lock, Check } from "lucide-react";
 import { useQuiz } from "../hooks/use-quiz";
 import { usePremiumCheck } from "../hooks/use-premium-check";
@@ -48,15 +49,45 @@ export default function Home() {
   const [showAuthModal, setShowAuthModal] = useState(false);
   const [showCategoryModal, setShowCategoryModal] = useState(false);
   const [showPremiumAlert, setShowPremiumAlert] = useState(false);
+  const [showFreeLimitModal, setShowFreeLimitModal] = useState(false);
   const [premiumAlertMessage, setPremiumAlertMessage] = useState('');
   const [selectedCategory, setSelectedCategory] = useState<Category | null>(null);
   const [authError, setAuthError] = useState<string>('');
   const [, setLocation] = useLocation();
   const [loadingCategories, setLoadingCategories] = useState(false);
+  const [userRanking, setUserRanking] = useState<number | undefined>(undefined);
+  const [userPoints, setUserPoints] = useState<number | undefined>(undefined);
+  const [freeStatus, setFreeStatus] = useState<{
+    isPremium: boolean;
+    freeQuestionsAnswered: number;
+    freeQuestionsRemaining: number;
+    canStartFreeQuiz: boolean;
+  } | null>(null);
 
   useEffect(() => {
     fetchCategories();
+    fetchFreeStatus();
   }, []);
+
+  const fetchFreeStatus = async () => {
+    const token = localStorage.getItem('authToken');
+    if (!token) return;
+
+    try {
+      const response = await fetch(`${API_BASE_URL}/api/quiz/free-status`, {
+        headers: {
+          'Authorization': `Bearer ${token}`,
+        },
+      });
+
+      if (response.ok) {
+        const data = await response.json();
+        setFreeStatus(data);
+      }
+    } catch (error) {
+      console.error('Erro ao buscar status free:', error);
+    }
+  };
 
   const fetchCategories = async () => {
     try {
@@ -155,25 +186,61 @@ export default function Home() {
   const handleStartQuiz = async () => {
     setAuthError('');
 
-    const accessCheck = await checkPremiumAccess();
+    const token = localStorage.getItem('authToken');
     
-    if (!accessCheck.hasAccess) {
-      if (accessCheck.needsPremium) {
-        setPremiumAlertMessage(accessCheck.message || 'Premium necessário');
-        setShowPremiumAlert(true);
-      } else {
-        setShowAuthModal(true);
-      }
+    if (!token) {
+      setShowAuthModal(true);
       return;
     }
 
     try {
-      await startQuiz("JavaScript");
+      await startQuiz();
       setTimeout(() => {
         setLocation('/quiz');
       }, 10)
-    } catch (error) {
+    } catch (error: any) {
       console.error('Erro ao iniciar quiz:', error);
+      
+      if (error.message === 'FREE_LIMIT_REACHED' || error.message?.includes('FREE_LIMIT_REACHED')) {
+        const token = localStorage.getItem('authToken');
+        if (token) {
+          try {
+            const response = await fetch(`${API_BASE_URL}/api/ranking`, {
+              headers: { 'Authorization': `Bearer ${token}` },
+            });
+            
+            if (response.ok) {
+              const data = await response.json();
+              const tokenPayload = JSON.parse(atob(token.split('.')[1]));
+              
+              const currentUserId = tokenPayload.userId || tokenPayload.id || tokenPayload.sub || tokenPayload.user?.id;
+              
+              const userIndex = data.findIndex((u: any) => u.id === currentUserId);
+              
+              if (userIndex !== -1) {
+                const ranking = userIndex + 1;
+                const points = data[userIndex].totalScore || 0;
+                
+                setUserRanking(ranking);
+                setUserPoints(points);
+              } else {
+                setUserRanking(1);
+                setUserPoints(0);
+              }
+            } else {
+              console.log('❌ Home - Erro ao buscar ranking:', response.status);
+            }
+          } catch (err) {
+            console.error('❌ Home - Erro ao buscar ranking:', err);
+          }
+        }
+        
+        setTimeout(() => {
+          setShowFreeLimitModal(true);
+        }, 150);
+        
+        await fetchFreeStatus();
+      }
     }
   };
 
@@ -181,7 +248,7 @@ export default function Home() {
     try {
       setAuthError('');
 
-      const sessionToken = await startQuiz("JavaScript"); // Categoria padrão
+      const sessionToken = await startQuiz();
 
       if (!sessionToken) {
         throw new Error("Sessão não foi criada corretamente");
@@ -267,6 +334,18 @@ export default function Home() {
                 Explorar Categorias
               </Button>
             </div>
+
+            {/* Aviso para usuários free */}
+            {freeStatus && !freeStatus.isPremium && (
+              <div className="mt-6 text-center">
+                <p className="text-sm text-gray-700 bg-blue-50 px-6 py-3 rounded-lg inline-block border border-blue-200">
+                  Teste gratuitamente respondendo 3 perguntas do nosso quiz. 
+                  <span className="font-semibold text-primary ml-1">
+                    ({freeStatus.freeQuestionsAnswered}/3 perguntas respondidas)
+                  </span>
+                </p>
+              </div>
+            )}
           </div>
         </div>
       </section>
@@ -448,6 +527,14 @@ export default function Home() {
         isOpen={showPremiumAlert}
         onClose={() => setShowPremiumAlert(false)}
         message={premiumAlertMessage}
+      />
+
+      {/* Free Limit Reached Modal */}
+      <FreeLimitModal
+        isOpen={showFreeLimitModal}
+        onClose={() => setShowFreeLimitModal(false)}
+        userRanking={userRanking}
+        userPoints={userPoints}
       />
     </>
   );

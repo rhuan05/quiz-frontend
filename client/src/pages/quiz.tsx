@@ -5,9 +5,11 @@ import QuestionCard from "../components/quiz/question-card";
 import ProgressBar from "../components/quiz/progress-bar";
 import Timer from "../components/quiz/timer";
 import FeedbackModal from "../components/quiz/feedback-modal";
+import { FreeLimitModal } from "../components/quiz/free-limit-modal";
 import LoadingOverlay from "../components/layout/loading-overlay";
 import { Card, CardContent } from "../components/ui/card";
 import { Trophy } from "lucide-react";
+import { API_BASE_URL } from '../../../config.json';
 
 export default function Quiz() {
   const [, setLocation] = useLocation();
@@ -27,6 +29,9 @@ export default function Quiz() {
   const [selectedOption, setSelectedOption] = useState<string>("");
   const [timeSpent, setTimeSpent] = useState(0);
   const [isSubmitting, setIsSubmitting] = useState(false);
+  const [showFreeLimitModal, setShowFreeLimitModal] = useState(false);
+  const [userRanking, setUserRanking] = useState<number | undefined>(undefined);
+  const [userPoints, setUserPoints] = useState<number | undefined>(undefined);
 
   // Redirect if no session
   useEffect(() => {
@@ -56,8 +61,46 @@ export default function Quiz() {
     setIsSubmitting(true);
     try {
       await submitAnswer(questions[currentQuestionIndex].id, selectedOption, timeSpent);
-    } catch (error) {
+    } catch (error: any) {
       console.error("Failed to submit answer:", error);
+      
+      if (error.message === 'FREE_LIMIT_REACHED' || error.message?.includes('FREE_LIMIT_REACHED')) {
+        const token = localStorage.getItem('authToken');
+        if (token) {
+          try {
+            const response = await fetch(`${API_BASE_URL}/api/ranking`, {
+              headers: { 'Authorization': `Bearer ${token}` },
+            });
+            
+            if (response.ok) {
+              const data = await response.json();
+              const tokenPayload = JSON.parse(atob(token.split('.')[1]));
+              
+              const currentUserId = tokenPayload.userId || tokenPayload.id || tokenPayload.sub || tokenPayload.user?.id;
+              
+              const userIndex = data.findIndex((u: any) => u.id === currentUserId);
+              
+              if (userIndex !== -1) {
+                const ranking = userIndex + 1;
+                const points = data[userIndex].totalScore || 0;
+                
+                setUserRanking(ranking);
+                setUserPoints(points);
+              } else {
+                console.log('❌ Quiz - Usuário não encontrado no ranking');
+              }
+            } else {
+              console.log('❌ Quiz - Erro ao buscar ranking:', response.status);
+            }
+          } catch (err) {
+            console.error('❌ Quiz - Erro ao buscar ranking:', err);
+          }
+        }
+        
+        setTimeout(() => {
+          setShowFreeLimitModal(true);
+        }, 150);
+      }
     } finally {
       setIsSubmitting(false);
     }
@@ -151,6 +194,17 @@ export default function Quiz() {
           isLastQuestion={currentQuestionIndex >= questions.length - 1}
         />
       )}
+
+      {/* Free Limit Reached Modal */}
+      <FreeLimitModal
+        isOpen={showFreeLimitModal}
+        onClose={() => {
+          setShowFreeLimitModal(false);
+          setLocation('/');
+        }}
+        userRanking={userRanking}
+        userPoints={userPoints}
+      />
     </>
   );
 }

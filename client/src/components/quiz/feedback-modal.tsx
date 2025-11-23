@@ -39,7 +39,7 @@ export default function FeedbackModal({
           
           {isCorrect ? (
             <p className="text-lg text-gray-600 mb-6">
-              Você ganhou {pointsEarned} pontos
+              Você ganhou {pointsEarned} {pointsEarned === 1 ? 'ponto' : 'pontos'}
             </p>
           ) : (
             <>

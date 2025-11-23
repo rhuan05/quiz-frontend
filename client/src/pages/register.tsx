@@ -135,7 +135,7 @@ export default function RegisterContent() {
     }
 
     const handleGoogleSuccess = () => {
-        setLocation('/quiz');
+        setLocation('/');
     };
 
     const handleGoogleRequiresInfo = (data: { email: string; needsPhone?: boolean; needsUsername?: boolean }) => {
@@ -146,13 +146,13 @@ export default function RegisterContent() {
         if (data.needsPhone || data.needsUsername) {
             setShowCompleteProfile(true);
         } else {
-            setLocation('/quiz');
+            setLocation('/');
         }
     };
 
     const handleCompleteProfile = () => {
         setShowCompleteProfile(false);
-        setLocation('/quiz');
+        setLocation('/');
     };
 
     const customCompleteProfile = async (profileData: { username?: string; phone?: string }) => {
