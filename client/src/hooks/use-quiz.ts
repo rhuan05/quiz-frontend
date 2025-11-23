@@ -30,15 +30,21 @@ export function useQuiz() {
           categoryId
         };
       } else {
-        requestBody = {
-          category: category || 'JavaScript'
-        };
+        requestBody = {};
       }
 
       const sessionResponse = await apiRequest("POST", "/api/quiz/start", requestBody);
+      
+      if (!sessionResponse.ok) {
+        const errorData = await sessionResponse.json();
+        if (errorData.message === "FREE_LIMIT_REACHED") {
+          throw new Error("FREE_LIMIT_REACHED");
+        }
+        throw new Error(errorData.message || "Erro ao iniciar quiz");
+      }
+      
       const sessionData = await sessionResponse.json();
-      
-      
+
       return { 
         sessionToken: sessionData.sessionToken, 
         questions: sessionData.questions 
@@ -126,7 +132,7 @@ export function useQuiz() {
         params = { category: categoryOrId };
       }
     } else {
-      params = { category: 'JavaScript' };
+      params = {};
     }
         
     try {

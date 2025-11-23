@@ -50,14 +50,14 @@ export default function Login() {
         return;
       }
       
-      setLocation('/quiz');
+      setLocation('/');
     } catch (err: any) {
       setError(err.message || 'Erro ao fazer login. Tente novamente.');
     }
   };
 
   const handleGoogleSuccess = () => {
-    setLocation('/quiz');
+    setLocation('/');
   };
 
   const handleGoogleRequiresInfo = (data: { email: string; needsPhone?: boolean; needsUsername?: boolean }) => {
@@ -68,13 +68,13 @@ export default function Login() {
     if (data.needsPhone || data.needsUsername) {
       setShowCompleteProfile(true);
     } else {
-      setLocation('/quiz');
+      setLocation('/');
     }
   };
 
   const handleCompleteProfile = () => {
     setShowCompleteProfile(false);
-    setLocation('/quiz');
+    setLocation('/');
   };
 
   const customCompleteProfile = async (profileData: { username?: string; phone?: string }) => {
@@ -86,7 +86,7 @@ export default function Login() {
 
   const handleEmailVerified = () => {
     setShowEmailVerification(false);
-    setLocation('/quiz');
+    setLocation('/');
   };
 
   return (

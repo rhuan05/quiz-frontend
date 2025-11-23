@@ -23,6 +23,7 @@ interface Question {
   category: Category;
   topicId?: string;
   topic?: Topic;
+  isFree?: boolean;
   options: Option[];
   createdAt: string;
 }
@@ -97,6 +98,7 @@ interface QuestionForm {
   difficulty: string;
   category: string;
   topic: string;
+  isFree?: boolean;
   options: {
     text: string;
     isCorrect: boolean;
@@ -127,6 +129,7 @@ export default function AdminPage() {
     difficulty: '',
     category: '',
     topic: '',
+    isFree: false,
     options: [
       { text: '', isCorrect: false },
       { text: '', isCorrect: false },
@@ -632,6 +635,7 @@ export default function AdminPage() {
         category: formData.category,
         topicId: formData.topic,
         difficulty: formData.difficulty,
+        isFree: formData.isFree || false,
         options: validOptions.map(opt => ({
           text: opt.text.trim(),
           isCorrect: opt.isCorrect
@@ -667,6 +671,7 @@ export default function AdminPage() {
       difficulty: question.difficulty?.id || '',
       category: question.category?.id || '',
       topic: question.topicId || '',
+      isFree: question.isFree || false,
       options: question.options.map(opt => ({
         text: opt.text,
         isCorrect: opt.isCorrect
@@ -874,6 +879,19 @@ export default function AdminPage() {
                         ))}
                       </SelectContent>
                     </Select>
+                  </div>
+
+                  <div className="flex items-center space-x-2 pt-8">
+                    <input
+                      type="checkbox"
+                      id="isFree"
+                      checked={formData.isFree || false}
+                      onChange={(e) => setFormData({ ...formData, isFree: e.target.checked })}
+                      className="h-4 w-4 text-green-600 focus:ring-green-500 border-gray-300 rounded"
+                    />
+                    <label htmlFor="isFree" className="text-sm font-medium text-gray-700">
+                      Pergunta Gratuita
+                    </label>
                   </div>
 
                   <div className="md:col-span-2">
