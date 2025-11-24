@@ -4,7 +4,6 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "../co
 import { Button } from "../components/ui/button";
 import { Alert, AlertDescription } from "../components/ui/alert";
 import { Badge } from "../components/ui/badge";
-import { Progress } from "../components/ui/progress";
 import { Loader2, Crown, Calendar, CheckCircle, QrCode, Copy } from "lucide-react";
 import { useLocation } from "wouter";
 import { apiRequest } from "../lib/queryClient";
@@ -311,43 +310,6 @@ export default function PremiumPage(): React.ReactElement {
                 </div>
               </div>
             </div>
-
-            {/* Status for existing premium users */}
-            {premiumStatus?.isPremium && (
-              <div className="bg-green-50 border border-green-200 rounded-lg p-4">
-                <div className="flex items-center gap-2 mb-2">
-                  <Badge variant="default" className="bg-green-100 text-green-800">
-                    <CheckCircle className="h-4 w-4 mr-1" />
-                    Ativo
-                  </Badge>
-                  <span className="text-sm text-gray-600">
-                    Expira em {formatDate(premiumStatus.premiumExpiresAt!)}
-                  </span>
-                </div>
-                
-                {premiumStatus.daysRemaining !== undefined && (
-                  <div className="space-y-2">
-                    <div className="flex justify-between text-sm">
-                      <span>Dias restantes</span>
-                      <span className="font-medium">{premiumStatus.daysRemaining}</span>
-                    </div>
-                    <Progress 
-                      value={calculateProgress(premiumStatus.daysRemaining)} 
-                      className="h-2"
-                    />
-                  </div>
-                )}
-                
-                {premiumStatus.daysRemaining !== undefined && premiumStatus.daysRemaining <= 5 && (
-                  <Alert className="mt-3">
-                    <Calendar className="h-4 w-4" />
-                    <AlertDescription>
-                      Seu acesso premium expira em breve! Renove agora para continuar aproveitando.
-                    </AlertDescription>
-                  </Alert>
-                )}
-              </div>
-            )}
           </CardContent>
         </Card>
 

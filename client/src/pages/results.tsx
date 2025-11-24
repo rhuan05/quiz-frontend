@@ -5,16 +5,83 @@ import { Card, CardContent } from "../components/ui/card";
 import { Button } from "../components/ui/button";
 import ShareModal from "../components/quiz/share-modal";
 import LoadingOverlay from "../components/layout/loading-overlay";
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { Trophy, RotateCcw, Share, BarChart3, Medal } from "lucide-react";
 import { useQuiz } from "../hooks/use-quiz";
+import { API_BASE_URL } from '../../../config.json';
 
 export default function Results() {
   const params = useParams();
   const [, setLocation] = useLocation();
   const [showShareModal, setShowShareModal] = useState(false);
+  const [freeStatus, setFreeStatus] = useState<{
+    isPremium: boolean;
+    freeQuestionsAnswered: number;
+    freeQuestionsRemaining: number;
+    canStartFreeQuiz: boolean;
+  } | null>(null);
+  const [userRanking, setUserRanking] = useState<number | undefined>(undefined);
+  const [userPoints, setUserPoints] = useState<number | undefined>(undefined);
   
   const sessionToken = params.sessionToken;
+
+  useEffect(() => {
+    fetchFreeStatus();
+    fetchRanking();
+  }, []);
+
+  const fetchFreeStatus = async () => {
+    const token = localStorage.getItem('authToken');
+    if (!token) return;
+
+    try {
+      const response = await fetch(`${API_BASE_URL}/api/quiz/free-status`, {
+        headers: {
+          'Authorization': `Bearer ${token}`,
+        },
+      });
+
+      if (response.ok) {
+        const data = await response.json();
+        setFreeStatus(data);
+      }
+    } catch (error) {
+      console.error('Erro ao buscar status gratuito:', error);
+    }
+  };
+
+  const fetchRanking = async () => {
+    const token = localStorage.getItem('authToken');
+    if (!token) return;
+
+    try {
+      const response = await fetch(`${API_BASE_URL}/api/ranking`, {
+        headers: { 'Authorization': `Bearer ${token}` },
+      });
+      
+      if (response.ok) {
+        const data = await response.json();
+        const tokenPayload = JSON.parse(atob(token.split('.')[1]));
+        
+        const currentUserId = tokenPayload.userId || tokenPayload.id || tokenPayload.sub || tokenPayload.user?.id;
+        
+        const userIndex = data.findIndex((u: any) => u.id === currentUserId);
+        
+        if (userIndex !== -1) {
+          const ranking = userIndex + 1;
+          const points = data[userIndex].totalScore || 0;
+          
+          setUserRanking(ranking);
+          setUserPoints(points);
+        } else {
+          setUserRanking(1);
+          setUserPoints(0);
+        }
+      }
+    } catch (err) {
+      console.error('Erro ao buscar ranking:', err);
+    }
+  };
 
   const { data: results, isLoading, error } = useQuery({
     queryKey: ["/api/quiz/results", sessionToken],
@@ -87,6 +154,35 @@ export default function Results() {
 
   return (
     <>
+      {/* Banner de aviso para usuários free - Fixo no topo */}
+      {freeStatus && !freeStatus.isPremium && freeStatus.freeQuestionsAnswered >= 3 && (
+        <div className="bg-white border-b border-gray-200 py-4 sticky top-0 z-50 shadow-sm">
+          <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+            <p className="text-center text-sm text-gray-700">
+              🎉 Você respondeu as suas <span className="font-bold text-primary">3 perguntas teste</span>
+              {userRanking && userRanking > 0 ? (
+                <span className="block mt-2">
+                  e está em <span className="font-bold text-green-600">{userRanking}º lugar</span> no ranking
+                </span>
+              ) : null}
+              {userPoints !== undefined && userPoints >= 0 ? (
+                <span className="block mt-1">
+                  com <span className="font-bold text-orange-600">{userPoints} pontos</span>!
+                </span>
+              ) : null}
+              <span className="block mt-3">
+                <button 
+                  onClick={() => setLocation('/premium')}
+                  className="bg-blue-600 text-white px-4 py-1.5 rounded-md font-semibold"
+                >
+                  Solicite Premium para continuar
+                </button>
+              </span>
+            </p>
+          </div>
+        </div>
+      )}
+      
       <div className="min-h-screen py-8 bg-gradient-to-br from-blue-50 to-indigo-100">
         <div className="max-w-4xl mx-auto px-4 sm:px-6 lg:px-8">
           {/* Results Header */}

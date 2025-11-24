@@ -269,6 +269,36 @@ export default function Home() {
     <>
       {isLoading && <LoadingOverlay />}
 
+      {/* Banner de aviso para usuários free - Fixo no topo */}
+      {freeStatus && !freeStatus.isPremium && (
+        <div className={`border-b py-3 sticky top-0 z-50 shadow-sm bg-gradient-to-r from-blue-50 to-indigo-50 border-blue-200`}>
+          <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+            <p className={`text-center text-sm 'text-white'`}>
+              {freeStatus.freeQuestionsAnswered < 3 ? (
+                <>
+                  🎯 <span className="font-semibold">Teste gratuito:</span> Responda 3 perguntas do nosso quiz clicando em 'Quiz Misto'.
+                  <span className="font-bold text-primary ml-2">
+                    ({freeStatus.freeQuestionsAnswered}/3 perguntas respondidas)
+                  </span>
+                </>
+              ) : (
+                <>
+                  🎉 <span className="font-semibold">Parabéns!</span> Você completou as 3 perguntas gratuitas.
+                  <span className="ml-2">
+                    <button 
+                      onClick={() => setLocation('/premium')}
+                      className="bg-blue-600 text-white px-4 py-1.5 rounded-md font-semibold"
+                    >
+                      Solicite Premium para continuar
+                    </button>
+                  </span>
+                </>
+              )}
+            </p>
+          </div>
+        </div>
+      )}
+
       {/* Hero Section */}
       <section className="relative py-20 lg:py-32 overflow-hidden">
         <div className="absolute inset-0 bg-gradient-to-br from-blue-50 via-indigo-50 to-purple-50"></div>
@@ -334,18 +364,6 @@ export default function Home() {
                 Explorar Categorias
               </Button>
             </div>
-
-            {/* Aviso para usuários free */}
-            {freeStatus && !freeStatus.isPremium && (
-              <div className="mt-6 text-center">
-                <p className="text-sm text-gray-700 bg-blue-50 px-6 py-3 rounded-lg inline-block border border-blue-200">
-                  Teste gratuitamente respondendo 3 perguntas do nosso quiz. 
-                  <span className="font-semibold text-primary ml-1">
-                    ({freeStatus.freeQuestionsAnswered}/3 perguntas respondidas)
-                  </span>
-                </p>
-              </div>
-            )}
           </div>
         </div>
       </section>
