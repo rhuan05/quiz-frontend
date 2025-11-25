@@ -271,9 +271,9 @@ export default function Home() {
 
       {/* Banner de aviso para usuários free - Fixo no topo */}
       {freeStatus && !freeStatus.isPremium && (
-        <div className={`border-b py-3 sticky top-0 z-40 shadow-sm bg-gradient-to-r from-blue-50 to-indigo-50 border-blue-200`}>
+        <div className={`border-b py-3 fixed top-16 left-0 right-0 z-40 shadow-sm bg-gradient-to-r from-blue-50 to-indigo-50 border-blue-200`}>
           <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-            <p className={`text-center text-sm 'text-white'`}>
+            <p className={`text-center text-sm text-gray-700`}>
               {freeStatus.freeQuestionsAnswered < 3 ? (
                 <>
                   🎯 <span className="font-semibold">Teste gratuito:</span> Responda 3 perguntas do nosso quiz clicando em 'Quiz Misto'.
@@ -300,7 +300,7 @@ export default function Home() {
       )}
 
       {/* Hero Section */}
-      <section className="relative py-20 lg:py-32 overflow-hidden">
+      <section className={`relative py-20 lg:py-32 overflow-hidden ${freeStatus && !freeStatus.isPremium ? 'pt-32' : ''}`}>
         <div className="absolute inset-0 bg-gradient-to-br from-blue-50 via-indigo-50 to-purple-50"></div>
         <div className="absolute inset-0 opacity-10">
           <div className="absolute top-20 left-10 text-6xl font-mono text-primary transform rotate-12">{"{}"}</div>

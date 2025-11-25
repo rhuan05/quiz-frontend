@@ -156,7 +156,7 @@ export default function Results() {
     <>
       {/* Banner de aviso para usuários free - Fixo no topo */}
       {freeStatus && !freeStatus.isPremium && freeStatus.freeQuestionsAnswered >= 3 && (
-        <div className="bg-white border-b border-gray-200 py-4 sticky top-0 z-40 shadow-sm">
+        <div className="bg-white border-b border-gray-200 py-4 fixed top-16 left-0 right-0 z-40 shadow-sm">
           <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
             <p className="text-center text-sm text-gray-700">
               🎉 Você respondeu as suas <span className="font-bold text-primary">3 perguntas teste</span>
@@ -183,7 +183,7 @@ export default function Results() {
         </div>
       )}
       
-      <div className="min-h-screen py-8 bg-gradient-to-br from-blue-50 to-indigo-100">
+      <div className={`min-h-screen py-8 bg-gradient-to-br from-blue-50 to-indigo-100 ${freeStatus && !freeStatus.isPremium && freeStatus.freeQuestionsAnswered >= 3 ? 'pt-32' : ''}`}>
         <div className="max-w-4xl mx-auto px-4 sm:px-6 lg:px-8">
           {/* Results Header */}
           <div className="text-center mb-12">
@@ -322,7 +322,7 @@ export default function Results() {
           <div className="flex flex-col sm:flex-row gap-4 justify-center">
             <Button 
               onClick={handleRestartQuiz}
-              className="flex-1 max-w-xs bg-primary text-white px-8 py-4 font-semibold hover:bg-blue-600 transition-colors shadow-lg"
+              className="w-full sm:flex-1 sm:max-w-xs bg-primary text-white px-8 py-4 font-semibold hover:bg-blue-600 transition-colors shadow-lg"
             >
               <RotateCcw className="mr-3 h-5 w-5" />
               Tentar Novamente
@@ -330,7 +330,7 @@ export default function Results() {
             
             <Button 
               onClick={() => setShowShareModal(true)}
-              className="flex-1 max-w-xs bg-green-600 text-white px-8 py-4 font-semibold hover:bg-green-700 transition-colors shadow-lg"
+              className="w-full sm:flex-1 sm:max-w-xs bg-green-600 text-white px-8 py-4 font-semibold hover:bg-green-700 transition-colors shadow-lg"
             >
               <Share className="mr-3 h-5 w-5" />
               Compartilhar Resultado
@@ -339,7 +339,7 @@ export default function Results() {
             <Button 
               onClick={handleViewAnalysis}
               variant="secondary"
-              className="flex-1 max-w-xs px-8 py-4 font-semibold transition-colors shadow-lg"
+              className="w-full sm:flex-1 sm:max-w-xs px-8 py-4 font-semibold transition-colors shadow-lg"
             >
               <BarChart3 className="mr-3 h-5 w-5" />
               Análise Detalhada
