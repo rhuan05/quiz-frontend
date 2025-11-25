@@ -156,7 +156,7 @@ export default function Results() {
     <>
       {/* Banner de aviso para usuários free - Fixo no topo */}
       {freeStatus && !freeStatus.isPremium && freeStatus.freeQuestionsAnswered >= 3 && (
-        <div className="bg-white border-b border-gray-200 py-4 sticky top-0 z-50 shadow-sm">
+        <div className="bg-white border-b border-gray-200 py-4 sticky top-0 z-40 shadow-sm">
           <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
             <p className="text-center text-sm text-gray-700">
               🎉 Você respondeu as suas <span className="font-bold text-primary">3 perguntas teste</span>

@@ -202,7 +202,7 @@ export default function Header() {
 
   return (
     <>
-      <header className="bg-white shadow-sm border-b border-gray-200 sticky top-0 z-40">
+      <header className="bg-white shadow-sm border-b border-gray-200 sticky top-0 z-50">
         <div className="max-w-6xl mx-auto px-4 sm:px-6 lg:px-8">
           <div className="flex justify-between items-center h-16">
             <div
@@ -288,7 +288,7 @@ export default function Header() {
               </button>
 
               {isMenuOpen && (
-                <div className="absolute top-16 right-4 bg-white shadow-lg rounded-md p-4 w-60 space-y-2 z-50">
+                <div className="absolute top-16 right-4 bg-white shadow-lg rounded-md p-4 w-60 space-y-2 z-[60]">
                   {isAuthenticated && user && (
                     <div className="flex items-center space-x-3 pb-3 border-b border-gray-200 mb-3">
                       <UserAvatar user={user} />

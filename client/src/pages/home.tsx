@@ -271,7 +271,7 @@ export default function Home() {
 
       {/* Banner de aviso para usuários free - Fixo no topo */}
       {freeStatus && !freeStatus.isPremium && (
-        <div className={`border-b py-3 sticky top-0 z-50 shadow-sm bg-gradient-to-r from-blue-50 to-indigo-50 border-blue-200`}>
+        <div className={`border-b py-3 sticky top-0 z-40 shadow-sm bg-gradient-to-r from-blue-50 to-indigo-50 border-blue-200`}>
           <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
             <p className={`text-center text-sm 'text-white'`}>
               {freeStatus.freeQuestionsAnswered < 3 ? (
