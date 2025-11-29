@@ -18,6 +18,7 @@ import { API_BASE_URL } from '../../../config.json';
 interface Question {
   id: string;
   question: string;
+  code?: string;
   explanation: string;
   difficulty: Difficulty;
   category: Category;
@@ -69,6 +70,7 @@ interface CategoryFormData {
   isActive?: boolean;
   order?: number;
   color?: string;
+  icon?: string;
 }
 
 interface TopicFormData {
@@ -94,6 +96,7 @@ interface Difficulty {
 
 interface QuestionForm {
   question: string;
+  code?: string;
   explanation: string;
   difficulty: string;
   category: string;
@@ -113,6 +116,7 @@ export default function AdminPage() {
   const [topics, setTopics] = useState<Topic[]>([]);
   const [difficulties, setDifficulties] = useState<Difficulty[]>([]);
   const [isLoading, setIsLoading] = useState(true);
+  const [isSubmitting, setIsSubmitting] = useState(false);
   const [error, setError] = useState<{ status: number; message: string } | null>(null);
   const [isDialogOpen, setIsDialogOpen] = useState(false);
   const [editingQuestion, setEditingQuestion] = useState<Question | null>(null);
@@ -125,6 +129,7 @@ export default function AdminPage() {
   const [availableTopics, setAvailableTopics] = useState<Topic[]>([]);
   const [formData, setFormData] = useState<QuestionForm>({
     question: '',
+    code: '',
     explanation: '',
     difficulty: '',
     category: '',
@@ -273,6 +278,7 @@ export default function AdminPage() {
   const resetForm = () => {
     setFormData({
       question: '',
+      code: '',
       explanation: '',
       difficulty: '',
       category: '',
@@ -297,7 +303,8 @@ export default function AdminPage() {
         : '',
       isActive: category.isActive, 
       order: category.order,
-      color: category.color || ''
+      color: category.color || '',
+      icon: category.icon || ''
     });
   };
 
@@ -623,6 +630,7 @@ export default function AdminPage() {
       return;
     }
 
+    setIsSubmitting(true);
     try {
       const method = editingQuestion ? 'PUT' : 'POST';
       const url = editingQuestion 
@@ -631,6 +639,7 @@ export default function AdminPage() {
 
       const requestData = {
         question: formData.question.trim(),
+        code: formData.code?.trim() || undefined,
         explanation: formData.explanation.trim(),
         category: formData.category,
         topicId: formData.topic,
@@ -661,12 +670,15 @@ export default function AdminPage() {
       }
     } catch (error) {
       alert('Erro de conexão: Não foi possível salvar a pergunta');
+    } finally {
+      setIsSubmitting(false);
     }
   };
 
   const handleEdit = async (question: Question) => {
     const newFormData = {
       question: question.question,
+      code: question.code || '',
       explanation: question.explanation,
       difficulty: question.difficulty?.id || '',
       category: question.category?.id || '',
@@ -808,6 +820,19 @@ export default function AdminPage() {
                     />
                   </div>
 
+                  <div className="md:col-span-2">
+                    <label className="block text-sm font-medium text-gray-700 mb-2">
+                      Código (opcional)
+                    </label>
+                    <Textarea
+                      value={formData.code}
+                      onChange={(e) => setFormData({ ...formData, code: e.target.value })}
+                      placeholder="Digite o código de exemplo (se houver)..."
+                      rows={5}
+                      className="font-mono text-sm"
+                    />
+                  </div>
+
                   <div>
                     <label className="block text-sm font-medium text-gray-700 mb-2">
                       Categoria *
@@ -938,11 +963,12 @@ export default function AdminPage() {
                     type="button" 
                     variant="outline" 
                     onClick={() => setIsDialogOpen(false)}
+                    disabled={isSubmitting}
                   >
                     Cancelar
                   </Button>
-                  <Button type="submit">
-                    {editingQuestion ? 'Atualizar' : 'Criar'} Pergunta
+                  <Button type="submit" disabled={isSubmitting}>
+                    {isSubmitting ? 'Salvando...' : editingQuestion ? 'Atualizar Pergunta' : 'Criar Pergunta'}
                   </Button>
                 </div>
               </form>
@@ -1181,6 +1207,16 @@ export default function AdminPage() {
                                 value={categoryFormData.color || ''}
                                 onChange={(e) => setCategoryFormData({...categoryFormData, color: e.target.value})}
                                 placeholder="#F7DF1E"
+                              />
+                            </div>
+
+                            <div>
+                              <Label htmlFor="category-icon">Ícone</Label>
+                              <Input
+                                id="category-icon"
+                                value={categoryFormData.icon || ''}
+                                onChange={(e) => setCategoryFormData({...categoryFormData, icon: e.target.value})}
+                                placeholder="Emoji ou texto do ícone"
                               />
                             </div>
 
